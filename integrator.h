@@ -14,7 +14,6 @@
 #include "stepfunction.h"
 #include "plot.h"
 
-
 class Integrator {
 public:
 	Integrator(std::vector<std::string> arg);

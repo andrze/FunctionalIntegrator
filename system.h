@@ -9,7 +9,7 @@
 class System {
 public:
 	System();
-	System(StepFunction V, double delta_t, double d, double n, size_t norm_point, bool sigma_normalization);
+	System(StepFunction V, double delta_t, double d, double n, bool sigma_normalization);
 	System(std::vector<std::string> configuration, double kappa = -1);
 
 	std::vector<StepFunction> parameters;
@@ -27,13 +27,15 @@ public:
 	double d = 3.;
 	double vd = 1.;
 	double n = 1.;
-	size_t norm_point = 0;
 	bool sigma_normalization = true;
 	size_t num_points = 60;
 	double rho0_to_rhomax = 1.5;
 	double kappa = 1.;
 	double u = 0.1;
 	double a = 2.;
+
+	double z_violation = 1.;
+	bool zoomed = false;
 
 	void reparametrize();
 	size_t num_functions();
@@ -45,12 +47,8 @@ public:
 	void find_eta();
 	System time_derivative(std::vector<Plot> *integrands = nullptr);
 
-	void rk4_step(StepFunction *y_der = nullptr); // RK4
-	void ssp_rk3_step(StepFunction *y_der = nullptr); // Strong Stability Preserving RK3
-	void euler_step(StepFunction *y_der = nullptr); // Euler method
-
 	void rescale();
-	void fix_v();
+	void zoom_in();
 
 	double last_val();
 	double first_val();

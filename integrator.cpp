@@ -27,15 +27,17 @@ void Integrator::restart_system(double kappa) {
 
 int Integrator::integrate() {
 	size_t max_steps = 10e+7;
-	double max_time = 30;
+	double max_time = 100;
 	snapshots.push_back(system);
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		try {
-			system = ssp_rk4.runge_kutta_step(system);
+			system = rk4.runge_kutta_step(system);
 			//system.rk4_step();
 			//system.ssp_rk3_step();
 			//system.euler_step();
+			system.zoom_in();
+			system.rescale();
 
 		} catch (const std::runtime_error &err) {
 			std::cout << err.what() << "\n";
@@ -50,31 +52,6 @@ int Integrator::integrate() {
 			std::cout << system.print_phase();
 
 			return system.find_phase();
-
-			/*if (system.delta_t / 2 < system.min_delta_t) {
-			 system = backup.back();
-			 if (snapshots.back().time > system.time) {
-			 system = snapshots.back();
-			 } else {
-			 snapshots.push_back(system);
-			 }
-			 return system.find_phase();
-			 }
-
-			 for (auto &&s : backup) {
-			 s.delta_t /= 2;
-			 }
-
-			 system = backup.front();
-
-			 for (int i = snapshots.size() - 1; i >= 0; i--) {
-			 if (snapshots[i].time >= system.time) {
-			 snapshots.pop_back();
-			 } else {
-			 break;
-			 }
-			 }
-			 continue;*/
 		}
 		int phase = system.find_phase();
 		if (phase != 0) {
@@ -108,7 +85,7 @@ void Integrator::find_criticality() {
 
 	size_t max_iter = 50;
 
-	for (size_t i = 0; i < max_iter && kappa_max-kappa_min > precision; i++) {
+	for (size_t i = 0; i < max_iter && kappa_max - kappa_min > precision; i++) {
 		restart_system((kappa_min + kappa_max) / 2);
 		std::cout << "Kappa = " << system.kappa << '\n';
 		int phase = integrate();
@@ -125,7 +102,7 @@ void Integrator::find_criticality() {
 				}
 			}
 
-			if (system.time < 1 || (num_of_negative < V.num_points / 3 && V[0] > -system.a*0.7)) {
+			if (system.time < 1 || (num_of_negative < V.num_points / 3 && V[0] > -system.a * 0.7)) {
 				kappa_min = system.kappa;
 				std::cout << "Zakończono w fazie nieuporządkowanej (prawdopodobnie)\n";
 			} else {
@@ -159,7 +136,7 @@ void Integrator::save_snapshots(std::string file) {
 	for (auto s : snapshots) {
 		out << "Rho,V,Zs,Zp\n";
 		for (size_t i = 0; i < s.V().num_points; i++) {
-			out << i * s.V().step_size << ',' << s.V()[i] << ',' << s.Zs()[i] << ',' << s.Zp()[i] << '\n';
+			out << s.V().xs()[i] << ',' << s.V()[i] << ',' << s.Zs()[i] << ',' << s.Zp()[i] << '\n';
 		}
 		out << "\n";
 	}
