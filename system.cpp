@@ -7,6 +7,7 @@
 #include "system.h"
 #include "regulator.h"
 #include "gaussquadrature.h"
+#include "integrator.h"
 
 double Power(double x, double y) {
 	return std::pow(x, y);
@@ -15,8 +16,8 @@ double Power(double x, double y) {
 System::System() {
 }
 
-System::System(StepFunction V, double delta_t, double d, double n, bool sigma_normalization) :
-		delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization) {
+System::System(Integrator *integrator, StepFunction V, double delta_t, double d, double n, bool sigma_normalization) :
+		integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization) {
 	parameters.push_back(V);
 	parameters.push_back(StepFunction(V.step_size, V.num_points, [](double) {
 		return 1;
@@ -27,7 +28,8 @@ System::System(StepFunction V, double delta_t, double d, double n, bool sigma_no
 	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 }
 
-System::System(std::vector<std::string> configuration, double kappa) {
+System::System(Integrator *integrator, std::vector<std::string> configuration, double kappa) :
+		integrator(integrator) {
 
 	for (size_t i = 0; i < configuration.size() - 1; i++) {
 		std::string opt = configuration[i], val = configuration[i + 1];
@@ -139,7 +141,7 @@ void System::find_eta() {
 
 	auto v_free_integrand = [=](double y) {
 		double y2 = y * y;
-		return prefactor(y2) *  v_common_part(y2) * std::pow(y, d - 1.);
+		return prefactor(y2) * v_common_part(y2) * std::pow(y, d - 1.);
 	};
 
 	auto v_eta_integrand = [=](double y) {
@@ -546,6 +548,10 @@ double System::prefactor(double y, double eta) {
 
 double System::G(double m, double Z, double y) {
 	return 1 / (m + Z * y + r(y));
+}
+
+double System::gauss_legendre_integrate(std::function<double(double)> f) {
+	return integrator->GLIntegrator.integrate(f);
 }
 
 System operator+(System lhs, System rhs) {

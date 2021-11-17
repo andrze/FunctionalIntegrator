@@ -13,6 +13,7 @@
 #include "system.h"
 #include "stepfunction.h"
 #include "plot.h"
+#include "gaussquadrature.h"
 
 class Integrator {
 public:
@@ -32,6 +33,8 @@ public:
 	int integrate();
 	void find_criticality();
 	void save_snapshots(std::string file);
+
+	const GaussQuadrature GLIntegrator;
 
 };
 

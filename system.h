@@ -6,12 +6,15 @@
 #include "plot.h"
 #include <limits>
 
+class Integrator;
+
 class System {
 public:
 	System();
-	System(StepFunction V, double delta_t, double d, double n, bool sigma_normalization);
-	System(std::vector<std::string> configuration, double kappa = -1);
+	System(Integrator* integrator, StepFunction V, double delta_t, double d, double n, bool sigma_normalization);
+	System(Integrator* integrator, std::vector<std::string> configuration, double kappa = -1);
 
+	Integrator* integrator=nullptr;
 	std::vector<StepFunction> parameters;
 	int phase = 0;
 
@@ -67,6 +70,8 @@ public:
 	double prefactor(double y);
 	double prefactor(double y, double eta);
 	double G(double m, double Z, double y);
+
+	double gauss_legendre_integrate(std::function<double(double)> f);
 };
 
 System operator+(System lhs, System rhs);

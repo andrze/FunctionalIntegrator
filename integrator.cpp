@@ -13,7 +13,7 @@
 Integrator::Integrator(std::vector<std::string> arg) :
 		system_configuration(arg) {
 
-	system = System(arg);
+	system = System(this, arg);
 }
 
 Integrator::~Integrator() {
@@ -22,7 +22,7 @@ Integrator::~Integrator() {
 void Integrator::restart_system(double kappa) {
 	snapshots.clear();
 	backup.clear();
-	system = System(system_configuration, kappa);
+	system = System(this, system_configuration, kappa);
 }
 
 int Integrator::integrate() {
