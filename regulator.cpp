@@ -4,7 +4,7 @@
 // Regulator function and derivatives divided by Z (variable regulating fluctuactions)
 
 const double long_cutoff = 30.;
-const double short_cutoff = 0.1;
+const double short_cutoff = 1e-2;
 
 double R(double y) {
 	if (y < short_cutoff) {
