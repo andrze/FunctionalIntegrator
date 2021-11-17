@@ -23,7 +23,6 @@ public:
 
 	std::vector<std::string> system_configuration;
 	System system;
-	std::deque<System> backup;
 
 	std::vector<System> snapshots;
 

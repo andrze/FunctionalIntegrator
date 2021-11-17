@@ -21,7 +21,6 @@ Integrator::~Integrator() {
 
 void Integrator::restart_system(double kappa) {
 	snapshots.clear();
-	backup.clear();
 	system = System(this, system_configuration, kappa);
 }
 
@@ -38,13 +37,6 @@ int Integrator::integrate() {
 
 		} catch (const std::runtime_error &err) {
 			std::cout << err.what() << "\n";
-			std::cout << system << "\n";
-			if (backup.empty()) {
-				std::cout << "Faza nieokreślona. Brak kopii zapasowej do przywrócenia.\n";
-				return 0;
-			}
-
-			system = backup.back();
 
 			std::cout << system.print_phase();
 
@@ -65,10 +57,6 @@ int Integrator::integrate() {
 		}
 
 		if (system.step % 500 == 0) {
-			if (backup.size() == 10) {
-				backup.pop_front();
-			}
-			backup.push_back(system);
 			std::cout << system.time << ", " << std::flush;
 		}
 	}
