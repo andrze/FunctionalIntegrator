@@ -272,7 +272,7 @@ System System::time_derivative() {
 			double y2 = y * y;
 			double gp = std::pow(v1 + y2 * zp + r(y2), -1);
 			double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-			double pref = prefactor(y2, eta);
+			double pref = prefactor(y2) - eta * r(y2);
 			double res = -2 * Power(gp, 2) * (-1 + n) * (v2 + y2 * zp1)
 					- 2 * Power(gs, 2) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
 			return std::pow(y, d - 1) * res * pref * std::pow(y, d - 1);
@@ -284,7 +284,7 @@ System System::time_derivative() {
 			auto zs_integrand = [=](double y) {
 				double y2 = y * y;
 				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-				double pref = prefactor(y2, eta);
+				double pref = prefactor(y2) - eta * r(y2);
 
 				double res = -2 * Power(gp, 2) * ((-1 + n) * zp1 + zs1);
 				return std::pow(y, d - 1) * res * pref;
@@ -296,7 +296,7 @@ System System::time_derivative() {
 				double y2 = y * y;
 				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
 				double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-				double pref = prefactor(y2, eta);
+				double pref = prefactor(y2) - eta * r(y2);
 
 				double res = 8 * Power(gp, 3) * (-1 + n)
 						* ((rho * y2 * Power(zp1, 2)) / d + (v2 + y2 * zp1) * (-zp + zs))
@@ -323,7 +323,7 @@ System System::time_derivative() {
 			auto zp_integrand = [=](double y) {
 				double y2 = y * y;
 				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-				double pref = prefactor(y2, eta);
+				double pref = prefactor(y2) - eta * r(y2);
 
 				double res = -2 * Power(gp, 2) * ((-1 + n) * zp1 + zs1);
 				return std::pow(y, d - 1) * res * pref;
@@ -336,7 +336,7 @@ System System::time_derivative() {
 				double y2 = y * y;
 				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
 				double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-				double pref = prefactor(y2, eta);
+				double pref = prefactor(y2) - eta * r(y2);
 
 				double res = (2
 						* (d * Power(gp, 2) * (zp + rho * (zp1 - n * zp1) - zs)
@@ -537,10 +537,6 @@ double System::rp2(double y) {
 
 double System::prefactor(double y) {
 	return a / 2 * Prefactor(y);
-}
-
-double System::prefactor(double y, double eta) {
-	return a / 2 * Prefactor(y, eta);
 }
 
 double System::G(double m, double Z, double y) {

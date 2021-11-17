@@ -67,7 +67,6 @@ public:
 	double rp(double y);
 	double rp2(double y);
 	double prefactor(double y);
-	double prefactor(double y, double eta);
 	double G(double m, double Z, double y);
 
 	double gauss_legendre_integrate(std::function<double(double)> f);
