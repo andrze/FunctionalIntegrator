@@ -7,12 +7,6 @@ IntegralConfiguration::IntegralConfiguration(double start, double end, size_t n)
 }
 
 GaussQuadrature::GaussQuadrature() {
-	IntegralConfiguration i1(0, 0.05, 12), i2(0.1, 1, 20), i3(1., 2., 20), i4(2., 5.5, 20);
-	configurations.push_back(i1);
-	configurations.push_back(i2);
-	configurations.push_back(i3);
-	configurations.push_back(i4);
-
 	roots[1] = { { 0.0000000000000000 } };
 	weights[1] = { { 2.0000000000000000 } };
 	roots[2] = { { -0.5773502691896258, 0.5773502691896258 } };
@@ -156,22 +150,3 @@ double gauss_legendre_integrate(std::function<double(double)> f) {
 
 	return integral;
 }
-
-/*double gauss_legendre_integrate(std::function<double(double)> f, size_t n){
- GaussQuadrature integrator;
- double interval = 0.5;
- double base_start = 1e-4, base_end = 1e-1;
-
- double integral = integrator.integrate(base_start,base_end,f,4);
- double a=base_end, b=base_end+interval;
-
- for(size_t k=0; k<20; k++, a+=interval, interval*=2, b+=interval){
- double contribution = integrator.integrate(a, b, f, n);
- integral += contribution;
- if(std::abs(integral) > 1e-4 && std::abs(contribution/integral)<1e-4){
- break;
- }
- }
-
- return integral;
- }*/

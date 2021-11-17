@@ -19,7 +19,7 @@ public:
 	double integrate(std::function<double(double)> f, double a, double b, size_t n);
 	double integrate(std::function<double(double)> f, IntegralConfiguration conf);
 
-	std::vector<IntegralConfiguration> configurations;
+	std::vector<IntegralConfiguration> configurations = { { 0, 0.1, 8 }, { 0.1, 3., 30 }, { 3., 6., 12 } };
 
 private:
 	std::array<std::array<double, 21>, 21> roots;
