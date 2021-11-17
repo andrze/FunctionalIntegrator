@@ -2,6 +2,7 @@
 #include <fenv.h>
 #include <iostream>
 #include <cmath>
+#include <chrono>
 #include "realvector.h"
 #include "stepfunction.h"
 #include "gaussquadrature.h"
@@ -19,6 +20,7 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	auto start = std::chrono::steady_clock::now();
 	std::vector<std::string> arg(argv, argv + argc);
 
 	Integrator integrator(arg);
@@ -46,6 +48,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	integrator.save_snapshots(outfile);
+
+	auto end = std::chrono::steady_clock::now();
+	std::cout << "Calculations lasted for " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << " seconds.\n";
 
 	return 0;
 }
