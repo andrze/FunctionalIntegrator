@@ -32,10 +32,7 @@ int Integrator::integrate() {
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		try {
-			system = rk4.runge_kutta_step(system);
-			//system.rk4_step();
-			//system.ssp_rk3_step();
-			//system.euler_step();
+			runge_kutta_method.runge_kutta_step(system);
 			system.zoom_in();
 			system.rescale();
 

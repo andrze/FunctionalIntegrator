@@ -38,7 +38,7 @@ ButcherTable::ButcherTable(size_t steps, std::vector<double> a_data, std::vector
 ButcherTable::~ButcherTable() {
 }
 
-System ButcherTable::runge_kutta_step(System &initial) const {
+void ButcherTable::runge_kutta_step(System &initial) const {
 	if (!usable) {
 		throw std::runtime_error("Runge-Kutta method not properly initialized");
 	}
@@ -66,8 +66,6 @@ System ButcherTable::runge_kutta_step(System &initial) const {
 	//initial.fix_v();
 	initial.time += h;
 	initial.step++;
-
-	return initial;
 }
 
 std::ostream& operator<<(std::ostream &out, ButcherTable t) {

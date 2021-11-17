@@ -21,7 +21,7 @@ public:
 
 	std::vector<std::vector<double> > a;
 	std::vector<double> b;
-	System runge_kutta_step(System& initial) const;
+	void runge_kutta_step(System& initial) const;
 	bool usable=false;
 
 };

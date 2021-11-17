@@ -14,6 +14,7 @@
 #include "stepfunction.h"
 #include "plot.h"
 #include "gaussquadrature.h"
+#include "rungekutta.h"
 
 class Integrator {
 public:
@@ -25,6 +26,8 @@ public:
 	std::deque<System> backup;
 
 	std::vector<System> snapshots;
+
+	const ButcherTable runge_kutta_method = rk4;
 
 	double kappa_min = 0;
 	double precision = 1e-4;
