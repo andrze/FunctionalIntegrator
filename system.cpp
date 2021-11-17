@@ -39,8 +39,6 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, d
 			u = std::strtod(val.c_str(), nullptr);
 		} else if (opt == "-delta") {
 			delta_t = std::strtod(val.c_str(), nullptr);
-		} else if (opt == "-min_delta") {
-			min_delta_t = std::strtod(val.c_str(), nullptr);
 		} else if (opt == "-dim") {
 			d = std::strtod(val.c_str(), nullptr);
 		} else if (opt == "-N") {
@@ -226,7 +224,7 @@ void System::find_eta() {
 	eta = free_component / eta_component;
 }
 
-System System::time_derivative(std::vector<Plot> *integrands) {
+System System::time_derivative() {
 	find_eta();
 	StepFunction V = this->V();
 	StepFunction V2 = V.derivative(1);
@@ -494,7 +492,6 @@ std::array<double, 3> System::kappa_u_z() {
 std::string System::print_configuration() {
 	std::stringstream configuration;
 	configuration << "-delta," << delta_t << ',';
-	configuration << "-min_delta," << min_delta_t << ',';
 	configuration << "-dim," << d << ',';
 	configuration << "-N," << n << ',';
 	configuration << "-num_points," << num_points << ',';

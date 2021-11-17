@@ -20,7 +20,6 @@ public:
 
 	double time = 0.;
 	double delta_t = 1e-3;
-	double min_delta_t = 1e-6;
 	size_t step = 0;
 	double time_after_phase_diagnosis = 2.;
 
@@ -48,7 +47,7 @@ public:
 	StepFunction& Zp();
 
 	void find_eta();
-	System time_derivative(std::vector<Plot> *integrands = nullptr);
+	System time_derivative();
 
 	void rescale();
 	void zoom_in();
