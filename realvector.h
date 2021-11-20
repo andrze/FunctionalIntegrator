@@ -6,27 +6,29 @@
 #include <ostream>
 #include <functional>
 
+typedef long double PhysicalDouble;
+
 class RealVector {
 public:
 	RealVector();
-	RealVector(std::vector<double> coords);
+	RealVector(std::vector<PhysicalDouble> coords);
 
-	std::vector<double> coords;
+	std::vector<PhysicalDouble> coords;
 
 	size_t size();
 	RealVector& operator +=(RealVector rhs);
-	RealVector& operator *=(double rhs);
+	RealVector& operator *=(PhysicalDouble rhs);
 	RealVector& operator -=(RealVector rhs);
-	RealVector& operator /=(double rhs);
-	double& operator [](size_t i);
+	RealVector& operator /=(PhysicalDouble rhs);
+	PhysicalDouble& operator [](size_t i);
 };
 
 RealVector operator +(RealVector lhs, RealVector rhs);
 RealVector operator -(RealVector lhs, RealVector rhs);
-RealVector operator *(RealVector lhs, double rhs);
-RealVector operator *(double lhs, RealVector rhs);
-RealVector operator /(RealVector lhs, double rhs);
-double operator *(RealVector lhs, RealVector rhs);
+RealVector operator *(RealVector lhs, PhysicalDouble rhs);
+RealVector operator *(PhysicalDouble lhs, RealVector rhs);
+RealVector operator /(RealVector lhs, PhysicalDouble rhs);
+PhysicalDouble operator *(RealVector lhs, RealVector rhs);
 std::ostream& operator <<(std::ostream &out, RealVector v);
 
 RealVector filter(RealVector v, std::vector<bool>);

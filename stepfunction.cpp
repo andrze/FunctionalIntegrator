@@ -1,23 +1,24 @@
-#include "stepfunction.h"
 #include <limits>
 #include <iostream>
 #include <cmath>
 #include <algorithm>
 #include <cstdlib>
+#include "stepfunction.h"
+#include "realvector.h"
 
-const std::vector<double> DER1_COEFFICIENTS { 1. / 12, -2. / 3, 0, 2. / 3, -1. / 12 };
-const std::vector<double> DER1_BORDER_COEFFICIENTS { -25. / 12, 4., -3., 4. / 3, -1. / 4 };
-const std::vector<double> DER1_SEMIBORDER_COEFFICIENTS { -1. / 4, -5. / 6, 3. / 2, -1. / 2, 1. / 12 };
+const std::vector<PhysicalDouble> DER1_COEFFICIENTS { 1.l / 12, -2.l / 3, 0, 2.l / 3, -1.l / 12 };
+const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS { -25.l / 12, 4.l, -3.l, 4.l / 3, -1.l / 4 };
+const std::vector<PhysicalDouble> DER1_SEMIBORDER_COEFFICIENTS { -1.l / 4, -5.l / 6, 3.l / 2, -1.l / 2, 1.l / 12 };
 
-const std::vector<double> DER2_COEFFICIENTS = { -1. / 12, 4. / 3, -5. / 2, 4. / 3, -1. / 12 };
-const std::vector<double> DER2_BORDER_COEFFICIENTS = { 35. / 12, -26. / 3, 19. / 2, -14. / 3, 11. / 12 };
-const std::vector<double> DER2_SEMIBORDER_COEFFICIENTS = { 11. / 12, -5. / 3, 1. / 2, 1. / 3, -1. / 12 };
+const std::vector<PhysicalDouble> DER2_COEFFICIENTS = { -1.l / 12, 4.l / 3, -5.l / 2, 4.l / 3, -1.l / 12 };
+const std::vector<PhysicalDouble> DER2_BORDER_COEFFICIENTS = { 35.l / 12, -26.l / 3, 19.l / 2, -14.l / 3, 11.l / 12 };
+const std::vector<PhysicalDouble> DER2_SEMIBORDER_COEFFICIENTS = { 11.l / 12, -5.l / 3, 1.l / 2, 1.l / 3, -1.l / 12 };
 
-double lagrange_polynomial(double x, std::vector<double> x_values, std::vector<double> y_values) {
-	double res = 0;
+PhysicalDouble lagrange_polynomial(PhysicalDouble x, std::vector<PhysicalDouble> x_values, std::vector<PhysicalDouble> y_values) {
+	PhysicalDouble res = 0;
 
 	for (size_t i = 0; i < x_values.size(); i++) {
-		double li = 1;
+		PhysicalDouble li = 1;
 		for (size_t j = 0; j < x_values.size(); j++) {
 			if (j == i) {
 				continue;
@@ -34,31 +35,31 @@ StepFunction::StepFunction() {
 
 }
 
-StepFunction::StepFunction(double step_size, std::vector<double> y, double domain_begin) {
+StepFunction::StepFunction(PhysicalDouble step_size, std::vector<PhysicalDouble> y, PhysicalDouble domain_begin) {
 	this->domain_begin = domain_begin;
 	this->step_size = step_size;
 	vals = y;
 	num_points = vals.size();
 }
 
-StepFunction::StepFunction(double step_size, size_t num_points, std::function<double(double)> generator,
-		double domain_begin) {
+StepFunction::StepFunction(PhysicalDouble step_size, size_t num_points, std::function<PhysicalDouble(PhysicalDouble)> generator,
+		PhysicalDouble domain_begin) {
 	this->domain_begin = domain_begin;
 	this->step_size = step_size;
 	vals.reserve(num_points);
 	for (size_t i = 0; i < num_points; i++) {
-		vals.push_back(generator(domain_begin + double(i) * step_size));
+		vals.push_back(generator(domain_begin + PhysicalDouble(i) * step_size));
 	}
 	this->num_points = num_points;
 }
 
-double StepFunction::domain_end() {
-	return domain_begin + step_size * double(vals.size() - 1);
+PhysicalDouble StepFunction::domain_end() {
+	return domain_begin + step_size * PhysicalDouble(vals.size() - 1);
 }
 
-std::vector<double> StepFunction::xs() {
-	std::vector<double> xs;
-	double x = domain_begin;
+std::vector<PhysicalDouble> StepFunction::xs() {
+	std::vector<PhysicalDouble> xs;
+	PhysicalDouble x = domain_begin;
 	for (size_t i = 0; i < vals.size(); i++) {
 		xs.push_back(x);
 		x += step_size;
@@ -67,11 +68,11 @@ std::vector<double> StepFunction::xs() {
 }
 
 StepFunction StepFunction::x_func() {
-	std::vector<double> xs = this->xs();
+	std::vector<PhysicalDouble> xs = this->xs();
 	return StepFunction(step_size, xs, domain_begin);
 }
 
-double& StepFunction::operator[](size_t i) {
+PhysicalDouble& StepFunction::operator[](size_t i) {
 
 	if (i >= vals.size()) {
 		throw std::invalid_argument("Argument out of function domain");
@@ -79,7 +80,7 @@ double& StepFunction::operator[](size_t i) {
 	return vals[i];
 }
 
-double StepFunction::operator()(double x) {
+PhysicalDouble StepFunction::operator()(PhysicalDouble x) {
 	const int INTERPOLATION_ORDER = 5;
 
 	size_t pos = size_t(std::floor((x - domain_begin) / step_size));
@@ -93,9 +94,9 @@ double StepFunction::operator()(double x) {
 		slice_begin = int(num_points) - INTERPOLATION_ORDER;
 	}
 
-	std::vector<double> x_values;
+	std::vector<PhysicalDouble> x_values;
 	for (int k = 0; k < INTERPOLATION_ORDER; k++) {
-		x_values.push_back(double(k + slice_begin) * step_size + domain_begin);
+		x_values.push_back(PhysicalDouble(k + slice_begin) * step_size + domain_begin);
 	}
 
 	RealVector slice = interval(size_t(slice_begin), size_t(slice_begin + INTERPOLATION_ORDER));
@@ -103,12 +104,12 @@ double StepFunction::operator()(double x) {
 	return lagrange_polynomial(x, x_values, slice.coords);
 }
 
-double StepFunction::derivative(size_t n, size_t pos) {
+PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
 	if (n == 0) {
 		return vals[pos];
 	}
 
-	std::vector<double> coefficients, border_coefficients, semiborder_coefficients;
+	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients;
 	if (n == 1) {
 		coefficients = DER1_COEFFICIENTS;
 		border_coefficients = DER1_BORDER_COEFFICIENTS;
@@ -121,7 +122,7 @@ double StepFunction::derivative(size_t n, size_t pos) {
 		throw std::invalid_argument("Derivative of order larger than 2 are not implemented\n");
 	}
 
-	double normalization = std::pow(step_size, -double(n));
+	PhysicalDouble normalization = std::pow(step_size, -PhysicalDouble(n));
 
 	RealVector coefs(coefficients), border_coefs(border_coefficients), semiborder_coefs(semiborder_coefficients);
 
@@ -159,9 +160,9 @@ StepFunction StepFunction::derivative(size_t n) {
 	if (n == 0) {
 		return *this;
 	}
-	std::vector<double> new_vals;
+	std::vector<PhysicalDouble> new_vals;
 
-	std::vector<double> coefficients, border_coefficients, semiborder_coefficients;
+	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients;
 	if (n == 1) {
 		coefficients = DER1_COEFFICIENTS;
 		border_coefficients = DER1_BORDER_COEFFICIENTS;
@@ -174,7 +175,7 @@ StepFunction StepFunction::derivative(size_t n) {
 		throw std::invalid_argument("Derivative of order larger than 2 are not implemented\n");
 	}
 
-	double normalization = std::pow(step_size, -double(n));
+	PhysicalDouble normalization = std::pow(step_size, -PhysicalDouble(n));
 	for (auto &c : coefficients) {
 		c *= normalization;
 	}
@@ -238,7 +239,7 @@ RealVector StepFunction::interval(size_t begin, size_t end) {
 
 	auto interval_begin = std::next(it, int(begin));
 
-	std::vector<double> interval_vals(interval_begin, interval_end);
+	std::vector<PhysicalDouble> interval_vals(interval_begin, interval_end);
 	if (reverse) {
 		std::reverse(interval_vals.begin(), interval_vals.end());
 	}
@@ -246,13 +247,13 @@ RealVector StepFunction::interval(size_t begin, size_t end) {
 	return RealVector(interval_vals);
 }
 
-StepFunction StepFunction::zoom_in(double begin, double end) {
-	std::vector<double> new_vals;
+StepFunction StepFunction::zoom_in(PhysicalDouble begin, PhysicalDouble end) {
+	std::vector<PhysicalDouble> new_vals;
 
-	double new_step = (end - begin) / double(num_points - 1);
+	PhysicalDouble new_step = (end - begin) / PhysicalDouble(num_points - 1);
 
 	for (size_t i = 0; i < num_points; i++) {
-		double new_x = begin + new_step * double(i);
+		PhysicalDouble new_x = begin + new_step * PhysicalDouble(i);
 
 		new_vals.push_back((*this)(new_x));
 	}
@@ -260,8 +261,8 @@ StepFunction StepFunction::zoom_in(double begin, double end) {
 	return StepFunction(new_step, new_vals, begin);
 }
 
-double StepFunction::integral() {
-	double sum = 0;
+PhysicalDouble StepFunction::integral() {
+	PhysicalDouble sum = 0;
 
 	for (auto &&v : vals) {
 		sum += v;
@@ -270,17 +271,17 @@ double StepFunction::integral() {
 	return sum * step_size;
 }
 
-double StepFunction::norm() {
+PhysicalDouble StepFunction::norm() {
 
 	return std::sqrt(((*this) * (*this)).integral());
 }
 
-const std::pair<double, double> StepFunction::kappa_u() {
-	double x_lower = domain_begin;
-	double x_upper = domain_end();
+const std::pair<PhysicalDouble, PhysicalDouble> StepFunction::kappa_u() {
+	PhysicalDouble x_lower = domain_begin;
+	PhysicalDouble x_upper = domain_end();
 
 	const size_t MAX_ITERATIONS = 100;
-	const double THRESHOLD = 1e-8;
+	const PhysicalDouble THRESHOLD = 1e-8;
 
 	if ((*this)(x_lower) > 0 || (*this)(x_upper) < 0) {
 		return {-1, -1};
@@ -288,8 +289,8 @@ const std::pair<double, double> StepFunction::kappa_u() {
 
 	for (size_t i = 0; i < MAX_ITERATIONS; i++) {
 
-		double x_new = (x_lower + x_upper) / 2;
-		double f_new = (*this)(x_new);
+		PhysicalDouble x_new = (x_lower + x_upper) / 2;
+		PhysicalDouble f_new = (*this)(x_new);
 
 		if (f_new > 0) {
 			x_upper = x_new;
@@ -302,28 +303,28 @@ const std::pair<double, double> StepFunction::kappa_u() {
 		}
 	}
 
-	double root = (x_upper + x_lower) / 2;
+	PhysicalDouble root = (x_upper + x_lower) / 2;
 
 	return {root, derivative(1)(root)};
 }
 
-std::pair<double, double> StepFunction::minmax() {
+std::pair<PhysicalDouble, PhysicalDouble> StepFunction::minmax() {
 	auto mini_maxi = std::minmax_element(vals.begin(), vals.end());
 	return std::make_pair(*(mini_maxi.first), *(mini_maxi.second));
 }
 
 StepFunction operator+(StepFunction lhs, StepFunction rhs) {
-	if (std::abs(lhs.step_size - rhs.step_size) > std::numeric_limits<double>::epsilon()) {
+	if (std::abs(lhs.step_size - rhs.step_size) > std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::invalid_argument("Step sizes of added functions should be equal");
 	}
-	if (std::abs(lhs.domain_begin - rhs.domain_begin) > std::numeric_limits<double>::epsilon()
-			|| std::abs(lhs.domain_end() - rhs.domain_end()) > std::numeric_limits<double>::epsilon()) {
+	if (std::abs(lhs.domain_begin - rhs.domain_begin) > std::numeric_limits<PhysicalDouble>::epsilon()
+			|| std::abs(lhs.domain_end() - rhs.domain_end()) > std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::invalid_argument("Function domains are incompatible");
 	}
 	if (lhs.vals.size() != rhs.vals.size()) {
 		throw std::invalid_argument("Values sizes of added functions should be equal");
 	}
-	std::vector<double> new_vals;
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < lhs.vals.size(); i++) {
 		new_vals.push_back(lhs[i] + rhs[i]);
@@ -333,17 +334,17 @@ StepFunction operator+(StepFunction lhs, StepFunction rhs) {
 }
 
 StepFunction operator*(StepFunction lhs, StepFunction rhs) {
-	if (std::abs(lhs.step_size - rhs.step_size) > std::numeric_limits<double>::epsilon()) {
+	if (std::abs(lhs.step_size - rhs.step_size) > std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::invalid_argument("Step sizes of multiplied functions should be equal");
 	}
-	if (std::abs(lhs.domain_begin - rhs.domain_begin) > std::numeric_limits<double>::epsilon()
-			|| std::abs(lhs.domain_end() - rhs.domain_end()) > std::numeric_limits<double>::epsilon()) {
+	if (std::abs(lhs.domain_begin - rhs.domain_begin) > std::numeric_limits<PhysicalDouble>::epsilon()
+			|| std::abs(lhs.domain_end() - rhs.domain_end()) > std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::invalid_argument("Function domains are incompatible");
 	}
 	if (lhs.vals.size() != rhs.vals.size()) {
 		throw std::invalid_argument("Values sizes of multiplied functions should be equal");
 	}
-	std::vector<double> new_vals;
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < lhs.vals.size(); i++) {
 		new_vals.push_back(lhs[i] * rhs[i]);
@@ -358,17 +359,17 @@ StepFunction operator-(StepFunction lhs, StepFunction rhs) {
 }
 
 StepFunction operator/(StepFunction lhs, StepFunction rhs) {
-	if (std::abs(lhs.step_size - rhs.step_size) > std::numeric_limits<double>::epsilon()) {
+	if (std::abs(lhs.step_size - rhs.step_size) > std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::invalid_argument("Step sizes of multiplied functions should be equal");
 	}
-	if (std::abs(lhs.domain_begin - rhs.domain_begin) > std::numeric_limits<double>::epsilon()
-			|| std::abs(lhs.domain_end() - rhs.domain_end()) > std::numeric_limits<double>::epsilon()) {
+	if (std::abs(lhs.domain_begin - rhs.domain_begin) > std::numeric_limits<PhysicalDouble>::epsilon()
+			|| std::abs(lhs.domain_end() - rhs.domain_end()) > std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::invalid_argument("Function domains are incompatible");
 	}
 	if (lhs.vals.size() != rhs.vals.size()) {
 		throw std::invalid_argument("Values sizes of multiplied functions should be equal");
 	}
-	std::vector<double> new_vals;
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < lhs.vals.size(); i++) {
 		new_vals.push_back(lhs[i] / rhs[i]);
@@ -377,8 +378,8 @@ StepFunction operator/(StepFunction lhs, StepFunction rhs) {
 	return StepFunction(lhs.step_size, new_vals, lhs.domain_begin);
 }
 
-StepFunction operator+(double lhs, StepFunction rhs) {
-	std::vector<double> new_vals;
+StepFunction operator+(PhysicalDouble lhs, StepFunction rhs) {
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < rhs.vals.size(); i++) {
 		new_vals.push_back(lhs + rhs[i]);
@@ -387,12 +388,12 @@ StepFunction operator+(double lhs, StepFunction rhs) {
 	return StepFunction(rhs.step_size, new_vals, rhs.domain_begin);
 }
 
-StepFunction operator+(StepFunction lhs, double rhs) {
+StepFunction operator+(StepFunction lhs, PhysicalDouble rhs) {
 	return rhs + lhs;
 }
 
-StepFunction operator-(double lhs, StepFunction rhs) {
-	std::vector<double> new_vals;
+StepFunction operator-(PhysicalDouble lhs, StepFunction rhs) {
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < rhs.vals.size(); i++) {
 		new_vals.push_back(lhs - rhs[i]);
@@ -401,12 +402,12 @@ StepFunction operator-(double lhs, StepFunction rhs) {
 	return StepFunction(rhs.step_size, new_vals, rhs.domain_begin);
 }
 
-StepFunction operator-(StepFunction lhs, double rhs) {
+StepFunction operator-(StepFunction lhs, PhysicalDouble rhs) {
 	return lhs + (-rhs);
 }
 
-StepFunction operator*(double lhs, StepFunction rhs) {
-	std::vector<double> new_vals;
+StepFunction operator*(PhysicalDouble lhs, StepFunction rhs) {
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < rhs.vals.size(); i++) {
 		new_vals.push_back(lhs * rhs[i]);
@@ -415,12 +416,12 @@ StepFunction operator*(double lhs, StepFunction rhs) {
 	return StepFunction(rhs.step_size, new_vals, rhs.domain_begin);
 }
 
-StepFunction operator*(StepFunction lhs, double rhs) {
+StepFunction operator*(StepFunction lhs, PhysicalDouble rhs) {
 	return rhs * lhs;
 }
 
-StepFunction operator/(double lhs, StepFunction rhs) {
-	std::vector<double> new_vals;
+StepFunction operator/(PhysicalDouble lhs, StepFunction rhs) {
+	std::vector<PhysicalDouble> new_vals;
 
 	for (size_t i = 0; i < rhs.vals.size(); i++) {
 		new_vals.push_back(lhs / rhs[i]);
@@ -429,7 +430,7 @@ StepFunction operator/(double lhs, StepFunction rhs) {
 	return StepFunction(rhs.step_size, new_vals, rhs.domain_begin);
 }
 
-StepFunction operator/(StepFunction lhs, double rhs) {
+StepFunction operator/(StepFunction lhs, PhysicalDouble rhs) {
 	rhs = 1 / rhs;
 
 	return lhs * rhs;

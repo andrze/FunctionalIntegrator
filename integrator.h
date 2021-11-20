@@ -15,6 +15,7 @@
 #include "plot.h"
 #include "gaussquadrature.h"
 #include "rungekutta.h"
+#include "realvector.h"
 
 class Integrator {
 public:
@@ -26,12 +27,12 @@ public:
 
 	std::vector<System> snapshots;
 
-	const ButcherTable runge_kutta_method = rk4;
+	const ButcherTable runge_kutta_method = ssp_rk4;
 
-	double kappa_min = 0;
-	double precision = 1e-4;
+	PhysicalDouble kappa_min = 0;
+	PhysicalDouble precision = 1e-4;
 
-	void restart_system(double kappa = -1);
+	void restart_system(PhysicalDouble kappa = -1);
 	int integrate();
 	void find_criticality();
 	void save_snapshots(std::string file);

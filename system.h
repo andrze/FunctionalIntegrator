@@ -2,41 +2,42 @@
 #define PARAMETRIZATION_H
 #include <vector>
 #include <functional>
+#include <limits>
 #include "stepfunction.h"
 #include "plot.h"
-#include <limits>
+#include "realvector.h"
 
 class Integrator;
 
 class System {
 public:
 	System();
-	System(Integrator* integrator, StepFunction V, double delta_t, double d, double n, bool sigma_normalization);
-	System(Integrator* integrator, std::vector<std::string> configuration, double kappa = -1);
+	System(Integrator* integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n, bool sigma_normalization);
+	System(Integrator* integrator, std::vector<std::string> configuration, PhysicalDouble kappa = -1);
 
 	Integrator* integrator=nullptr;
 	std::vector<StepFunction> parameters;
 	int phase = 0;
 
-	double time = 0.;
-	double delta_t = 1e-3;
+	PhysicalDouble time = 0.;
+	PhysicalDouble delta_t = 1e-3;
 	size_t step = 0;
-	double time_after_phase_diagnosis = 2.;
+	PhysicalDouble time_after_phase_diagnosis = 2.;
 
-	double eta = 0.;
-	double z_dim = 1.;
+	PhysicalDouble eta = 0.;
+	PhysicalDouble z_dim = 1.;
 
-	double d = 3.;
-	double vd = 1.;
-	double n = 1.;
+	PhysicalDouble d = 3.;
+	PhysicalDouble vd = 1.;
+	PhysicalDouble n = 1.;
 	bool sigma_normalization = true;
 	size_t num_points = 60;
-	double rho0_to_rhomax = 1.5;
-	double kappa = 1.;
-	double u = 0.1;
-	double a = 2.;
+	PhysicalDouble rho0_to_rhomax = 1.5;
+	PhysicalDouble kappa = 1.;
+	PhysicalDouble u = 0.1;
+	PhysicalDouble a = 2.;
 
-	double z_violation = 1.;
+	PhysicalDouble z_violation = 1.;
 	bool zoomed = false;
 
 	void reparametrize();
@@ -52,29 +53,29 @@ public:
 	void rescale();
 	void zoom_in();
 
-	double last_val();
-	double first_val();
+	PhysicalDouble last_val();
+	PhysicalDouble first_val();
 	int find_phase();
 	std::string print_phase(int phase = 0);
 
-	std::array<double, 3> kappa_u_z();
+	std::array<PhysicalDouble, 3> kappa_u_z();
 	std::string print_configuration();
 
 	System& operator+=(System rhs);
-	System& operator*=(double rhs);
+	System& operator*=(PhysicalDouble rhs);
 
-	double r(double y);
-	double rp(double y);
-	double rp2(double y);
-	double prefactor(double y);
-	double G(double m, double Z, double y);
+	PhysicalDouble r(PhysicalDouble y);
+	PhysicalDouble rp(PhysicalDouble y);
+	PhysicalDouble rp2(PhysicalDouble y);
+	PhysicalDouble prefactor(PhysicalDouble y);
+	PhysicalDouble G(PhysicalDouble m, PhysicalDouble Z, PhysicalDouble y);
 
-	double gauss_legendre_integrate(std::function<double(double)> f);
+	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble)> f);
 };
 
 System operator+(System lhs, System rhs);
-System operator*(double lhs, System rhs);
-double time_eta_distance(System lhs, System rhs);
+System operator*(PhysicalDouble lhs, System rhs);
+PhysicalDouble time_eta_distance(System lhs, System rhs);
 
 std::ostream& operator<<(std::ostream &out, System s);
 

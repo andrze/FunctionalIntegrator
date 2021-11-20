@@ -5,11 +5,12 @@
  *      Author: andrzejchlebicki
  */
 
-#include "plotset.h"
 #include <limits>
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
+#include "plotset.h"
+#include "realvector.h"
 
 PlotSet::PlotSet(size_t i) {
 	for(size_t j=0; j<i; j++){
@@ -20,7 +21,7 @@ PlotSet::PlotSet(size_t i) {
 PlotSet::~PlotSet() {
 }
 
-void PlotSet::push_to_each(RealVector values, RealVector ders, double t){
+void PlotSet::push_to_each(RealVector values, RealVector ders, PhysicalDouble t){
 	for(size_t i=0; i<plots.size(); i++){
 		plots[i].values.push_back(values[i]);
 		plots[i].derivatives.push_back(ders[i]);
@@ -37,7 +38,7 @@ void PlotSet::pop_from_each(){
 }
 
 RealVector PlotSet::back_vals(){
-	std::vector<double> coords;
+	std::vector<PhysicalDouble> coords;
 	for(size_t i=0; i<plots.size(); i++){
 		coords.push_back(plots[i].values.back());
 	}
@@ -45,16 +46,16 @@ RealVector PlotSet::back_vals(){
 }
 
 RealVector PlotSet::back_ders(){
-	std::vector<double> coords;
+	std::vector<PhysicalDouble> coords;
 	for(size_t i=0; i<plots.size(); i++){
 		coords.push_back(plots[i].derivatives.back());
 	}
 	return RealVector(coords);
 }
 
-double PlotSet::back_time(){
-	double t=plots[0].times.back();
-	double precision = t*std::numeric_limits<double>::epsilon();
+PhysicalDouble PlotSet::back_time(){
+	PhysicalDouble t=plots[0].times.back();
+	PhysicalDouble precision = t*std::numeric_limits<PhysicalDouble>::epsilon();
 	for(size_t i=1; i<plots.size(); i++){
 		if(std::abs(t - plots[i].times.back()) > precision){
 			throw std::invalid_argument("Simulation time different in plots on same level");
@@ -82,11 +83,11 @@ size_t PlotSet::plot_number(){
 	return plots.size();
 }
 
-double PlotSet::eta(size_t k){
+PhysicalDouble PlotSet::eta(size_t k){
     return plots[4].exp_time_log_der(k);
 }
 
-Plot PlotSet::rescaled(size_t k, double d){
+Plot PlotSet::rescaled(size_t k, PhysicalDouble d){
     if(k > this->plot_number()){
         throw std::invalid_argument("Argument larger than number of plots");
     }
@@ -98,9 +99,9 @@ Plot PlotSet::rescaled(size_t k, double d){
     Plot rescaled;
     rescaled.times = this->plots[k].times;
     for(size_t i=0; i<this->plot_size(); i++){
-        double Z = this->plots[4].values[i];
-        double T = this->plots[5].values[i];
-        double scaling = 1;
+        PhysicalDouble Z = this->plots[4].values[i];
+        PhysicalDouble T = this->plots[5].values[i];
+        PhysicalDouble scaling = 1;
         if(k==0){
             scaling = std::sqrt(Z)*std::pow(rescaled.times[i],(2-d)/2)/sqrt(T);
         } else if(k==1 || k==2){
@@ -114,7 +115,7 @@ Plot PlotSet::rescaled(size_t k, double d){
     return rescaled;
 }
 
-int PlotSet::phase_diagnosis(double d){
+int PlotSet::phase_diagnosis(PhysicalDouble d){
 	size_t plot_size = this->plot_size();
 	size_t start = plot_size-10;
 	if(plot_size < 11){
@@ -135,7 +136,7 @@ int PlotSet::phase_diagnosis(double d){
     }
     /*
     for(size_t i=0; i<plot_size; i++){
-        double k = std::pow(plots[0].values[i],2)*plots[4].values[i];
+        PhysicalDouble k = std::pow(plots[0].values[i],2)*plots[4].values[i];
         if(k > 0.02 && eta(i) > 0.265){
             return 1;
         }

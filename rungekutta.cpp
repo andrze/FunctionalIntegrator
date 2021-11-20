@@ -10,19 +10,20 @@
 
 #include <stdexcept>
 #include "rungekutta.h"
+#include "realvector.h"
 
 ButcherTable::ButcherTable() {
 
 }
 
-ButcherTable::ButcherTable(size_t steps, std::vector<double> a_data, std::vector<double> b_data) :
+ButcherTable::ButcherTable(size_t steps, std::vector<PhysicalDouble> a_data, std::vector<PhysicalDouble> b_data) :
 		b(b_data) {
 	if (steps != b_data.size()) {
 		throw std::invalid_argument("Wrong size of Runge-Kutta initializing parameters");
 	}
 	size_t counter = 0;
 	for (size_t i = 0; i < steps; i++) {
-		a.push_back(std::vector<double>());
+		a.push_back(std::vector<PhysicalDouble>());
 		for (size_t j = 0; j < steps; j++) {
 			if (j >= i) {
 				a[i].push_back(0);
@@ -42,7 +43,7 @@ void ButcherTable::runge_kutta_step(System &initial) const {
 	if (!usable) {
 		throw std::runtime_error("Runge-Kutta method not properly initialized");
 	}
-	double h = initial.delta_t;
+	PhysicalDouble h = initial.delta_t;
 	std::vector<System> derivatives;
 	derivatives.reserve(a.size());
 	for (size_t i = 0; i < a.size(); i++) {
@@ -91,8 +92,8 @@ const ButcherTable euler { 1, { 0 }, { 1. } };
 const ButcherTable rk4 { 4, { .5, 0, .5, 0, 0, 1 }, { 1. / 6, 1. / 3, 1. / 3, 1. / 6 } };
 
 //SSP RK3
-std::array<double, 3> a_ssprk3_a { { 1, 1. / 4, 1. / 4 } };
-std::array<double, 3> b_ssprk3_a { { 1. / 6, 1. / 6, 2. / 3 } };
+std::array<PhysicalDouble, 3> a_ssprk3_a { { 1, 1. / 4, 1. / 4 } };
+std::array<PhysicalDouble, 3> b_ssprk3_a { { 1. / 6, 1. / 6, 2. / 3 } };
 const ButcherTable ssp_rk3 { 3, { 1, 1. / 4, 1. / 4 }, { 1. / 6, 1. / 6, 2. / 3 } };
 
 //SSP RK(5,4)

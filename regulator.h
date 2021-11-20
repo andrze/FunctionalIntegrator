@@ -1,10 +1,11 @@
 #ifndef REGULATOR_H
 #define REGULATOR_H
+#include "realvector.h"
 
-double R(double y); //  r(y))
-double Rp(double y); // r'(y)
-double Rp2(double y); // r''(y)
-double Prefactor(double y); // 2 (r(y) - y r'(y))
+PhysicalDouble R(PhysicalDouble y); //  r(y))
+PhysicalDouble Rp(PhysicalDouble y); // r'(y)
+PhysicalDouble Rp2(PhysicalDouble y); // r''(y)
+PhysicalDouble Prefactor(PhysicalDouble y); // 2 (r(y) - y r'(y))
 
 
 #endif // REGULATOR_H

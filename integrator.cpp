@@ -19,14 +19,14 @@ Integrator::Integrator(std::vector<std::string> arg) :
 Integrator::~Integrator() {
 }
 
-void Integrator::restart_system(double kappa) {
+void Integrator::restart_system(PhysicalDouble kappa) {
 	snapshots.clear();
 	system = System(this, system_configuration, kappa);
 }
 
 int Integrator::integrate() {
 	size_t max_steps = 10e+7;
-	double max_time = 100;
+	PhysicalDouble max_time = 100;
 	snapshots.push_back(system);
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
@@ -66,7 +66,7 @@ int Integrator::integrate() {
 }
 
 void Integrator::find_criticality() {
-	double kappa_max = system.kappa, kappa_min = this->kappa_min;
+	PhysicalDouble kappa_max = system.kappa, kappa_min = this->kappa_min;
 
 	size_t max_iter = 50;
 

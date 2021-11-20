@@ -25,17 +25,17 @@ else:
 
 #dimensions = [1.5,1.7,1.8,1.9,2.,2.1,2.5,3.]
 ns = [1.,1.2,1.4,1.6,1.8,2.]
-options = [[{'-kappa': 1.5}],
+options = [[{'-kappa': k} for k in [.6,.7,.8,.9,1.,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.]],
            [{'-u': 0.075}],
            [{'-dim': 2}],
-           [{'-rhomax': 3.5}],
-           [{'-delta': 5e-4}],
+           [{'-rhomax': 2.}],
+           [{'-delta': 2e-5}],
            [{'-precision': 1e-6}],
-           [{'-min_delta': 1e-4}],
            [{'-num_points': 200}],
            [{'-norm': 5}],
-           [{'-a': 2}],
-           [{'-N': n} for n in ns]]
+           [{'-a': a} for a in [1.,2.,3.]],
+           [{'-N': 2}],
+           [{'-sigma_normalization': 'false'}]]
            # [{'-d': 2.}, {'-d': 2.05}, {'-d': 2.07}, {'-d': 2.1}, {'-d': 2.2},
             # {'-d': 2.3}, {'-d': 2.5}, {'-d': 2.75}, {'-d': 2.9}, {'-d': 3}]]
 
@@ -47,7 +47,7 @@ for single_option in options[1:]:
             conf = single_config.copy()
             conf.update(configuration_set)
             if '-N' in conf.keys() and '-a' in conf.keys():
-                conf['-out'] = 'flow_N=%1.1f_a=%i.csv' % (conf['-N'],conf['-a'])
+                conf['-out'] = 'flow_k=%f_a=%f.csv' % (conf['-kappa'],conf['-a'])
             new_configurations.append(conf)
         
     all_configurations = new_configurations
@@ -56,8 +56,8 @@ project_dir = "/home/2/ac357729/Documents/FunctionalIntegrator"
 config_file = open('%s/scripts/run.config' % project_dir, 'w')
 
 if mode == "single":
-    for conf in all_configurations:
-        filename = "FunctionalIntegrator_single.sh"
+    for i, conf in enumerate(all_configurations):
+        filename = "FunctionalIntegrator_single_%02i.sh" % i
         file = open("%s/scripts/%s" % (project_dir, filename), 'w')
         options = ["%s %s" % (k,v) for (k,v) in conf.items()]  
         

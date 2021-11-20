@@ -8,27 +8,28 @@
 #include "regulator.h"
 #include "gaussquadrature.h"
 #include "integrator.h"
+#include "realvector.h"
 
-double Power(double x, double y) {
+PhysicalDouble Power(PhysicalDouble x, PhysicalDouble y) {
 	return std::pow(x, y);
 }
 
 System::System() {
 }
 
-System::System(Integrator *integrator, StepFunction V, double delta_t, double d, double n, bool sigma_normalization) :
+System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n, bool sigma_normalization) :
 		integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization) {
 	parameters.push_back(V);
-	parameters.push_back(StepFunction(V.step_size, V.num_points, [](double) {
+	parameters.push_back(StepFunction(V.step_size, V.num_points, [](PhysicalDouble) {
 		return 1;
 	}));
-	parameters.push_back(StepFunction(V.step_size, V.num_points, [](double) {
+	parameters.push_back(StepFunction(V.step_size, V.num_points, [](PhysicalDouble) {
 		return 1;
 	}));
 	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 }
 
-System::System(Integrator *integrator, std::vector<std::string> configuration, double kappa) :
+System::System(Integrator *integrator, std::vector<std::string> configuration, PhysicalDouble kappa) :
 		integrator(integrator) {
 
 	for (size_t i = 0; i < configuration.size() - 1; i++) {
@@ -66,18 +67,18 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, d
 
 void System::reparametrize() {
 
-	double step_size = kappa * rho0_to_rhomax / num_points;
+	PhysicalDouble step_size = kappa * rho0_to_rhomax / num_points;
 
-	StepFunction V(step_size, num_points, [&](double x) {
+	StepFunction V(step_size, num_points, [&](PhysicalDouble x) {
 		return u * (x - kappa);
 	});
 
 	parameters.clear();
 	parameters.push_back(V);
-	parameters.push_back(StepFunction(V.step_size, V.num_points, [=](double) {
+	parameters.push_back(StepFunction(V.step_size, V.num_points, [=](PhysicalDouble) {
 		return 1;
 	}));
-	parameters.push_back(StepFunction(V.step_size, V.num_points, [=](double) {
+	parameters.push_back(StepFunction(V.step_size, V.num_points, [=](PhysicalDouble) {
 		return 1;
 	}));
 }
@@ -103,24 +104,24 @@ StepFunction& System::Zp() {
 }
 
 void System::find_eta() {
-	double potential_minimum = V().kappa_u().first;
-	if (potential_minimum <= std::numeric_limits<double>::epsilon()) {
+	PhysicalDouble potential_minimum = V().kappa_u().first;
+	if (potential_minimum <= std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::runtime_error("Potential minimum is out of the grid");
 	}
 	size_t norm = size_t((potential_minimum - V().domain_begin) / V().step_size);
 
-	double v1 = V()(potential_minimum);
-	double v2 = V().derivative(1)(potential_minimum);
-	double v3 = V().derivative(2)(potential_minimum);
-	double zs = Zs()(potential_minimum);
-	double zs1 = Zs().derivative(1)(potential_minimum);
-	double zs2 = Zs().derivative(2)(potential_minimum);
-	double zp = Zp()(potential_minimum);
-	double zp1 = Zp().derivative(1)(potential_minimum);
-	double zp2 = Zp().derivative(2)(potential_minimum);
-	double rho = potential_minimum;
+	PhysicalDouble v1 = V()(potential_minimum);
+	PhysicalDouble v2 = V().derivative(1)(potential_minimum);
+	PhysicalDouble v3 = V().derivative(2)(potential_minimum);
+	PhysicalDouble zs = Zs()(potential_minimum);
+	PhysicalDouble zs1 = Zs().derivative(1)(potential_minimum);
+	PhysicalDouble zs2 = Zs().derivative(2)(potential_minimum);
+	PhysicalDouble zp = Zp()(potential_minimum);
+	PhysicalDouble zp1 = Zp().derivative(1)(potential_minimum);
+	PhysicalDouble zp2 = Zp().derivative(2)(potential_minimum);
+	PhysicalDouble rho = potential_minimum;
 
-	double z, z1;
+	PhysicalDouble z, z1;
 	if (sigma_normalization) {
 		z = zs;
 		z1 = zs1;
@@ -129,34 +130,34 @@ void System::find_eta() {
 		z1 = zp1;
 	}
 
-	auto v_common_part = [=](double y2) {
-		double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-		double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-		double res = -2 * Power(gp, 2) * (-1 + n) * (v2 + y2 * zp1)
+	auto v_common_part = [=](PhysicalDouble y2) {
+		PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+		PhysicalDouble gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
+		PhysicalDouble res = -2 * Power(gp, 2) * (-1 + n) * (v2 + y2 * zp1)
 				- 2 * Power(gs, 2) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
 		return res;
 	};
 
-	auto v_free_integrand = [=](double y) {
-		double y2 = y * y;
+	auto v_free_integrand = [=](PhysicalDouble y) {
+		PhysicalDouble y2 = y * y;
 		return prefactor(y2) * v_common_part(y2) * std::pow(y, d - 1.);
 	};
 
-	auto v_eta_integrand = [=](double y) {
-		double y2 = y * y;
+	auto v_eta_integrand = [=](PhysicalDouble y) {
+		PhysicalDouble y2 = y * y;
 		return r(y2) * v_common_part(y2) * std::pow(y, d - 1.);
 	};
 
 	auto z_common_part =
-			[=](double y2) {
+			[=](PhysicalDouble y2) {
 				if (norm == 0) {
-					double g = std::pow(v1 + y2 * zp + r(y2), -1);
+					PhysicalDouble g = std::pow(v1 + y2 * zp + r(y2), -1);
 
 					return -2 * Power(g, 2) * ((-1 + n) * zp1 + zs1);
 				} else if (sigma_normalization) {
 
-					double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-					double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
+					PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+					PhysicalDouble gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
 
 					return 8 * Power(gp, 3) * (-1 + n) * ((rho * y2 * Power(zp1, 2)) / d + (v2 + y2 * zp1) * (-zp + zs))
 							- (2 * Power(gp, 2) * (-1 + n) * (zp - zs + rho * zs1)) / rho
@@ -173,8 +174,8 @@ void System::find_eta() {
 											+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2(y2))) / d;
 				} else {
 
-					double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-					double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
+					PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+					PhysicalDouble gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
 
 					return (2
 							* (d * Power(gp, 2) * (zp + rho * (zp1 - n * zp1) - zs)
@@ -201,22 +202,22 @@ void System::find_eta() {
 
 			};
 
-	auto z_free_integrand = [=](double y) {
-		double y2 = y * y;
+	auto z_free_integrand = [=](PhysicalDouble y) {
+		PhysicalDouble y2 = y * y;
 		return prefactor(y2) * z_common_part(y2) * std::pow(y, d - 1.);
 	};
 
-	auto z_eta_integrand = [=](double y) {
-		double y2 = y * y;
+	auto z_eta_integrand = [=](PhysicalDouble y) {
+		PhysicalDouble y2 = y * y;
 		return r(y2) * z_common_part(y2) * std::pow(y, d - 1.);
 	};
 
-	double v_free = gauss_legendre_integrate(v_free_integrand);
-	double v_eta = gauss_legendre_integrate(v_eta_integrand);
-	double z_free = gauss_legendre_integrate(z_free_integrand);
-	double z_eta = gauss_legendre_integrate(z_eta_integrand);
+	PhysicalDouble v_free = gauss_legendre_integrate(v_free_integrand);
+	PhysicalDouble v_eta = gauss_legendre_integrate(v_eta_integrand);
+	PhysicalDouble z_free = gauss_legendre_integrate(z_free_integrand);
+	PhysicalDouble z_eta = gauss_legendre_integrate(z_eta_integrand);
 
-	double free_component, eta_component;
+	PhysicalDouble free_component, eta_component;
 
 	free_component = vd * (z_free * v2 - v_free * z1);
 	eta_component = -v2 * z + vd * (v_eta * z1 - z_eta * v2);
@@ -237,15 +238,15 @@ System System::time_derivative() {
 	StepFunction Zp2 = Zp.derivative(2);
 
 	size_t num_points = V.num_points;
-	double step = V.step_size;
-	std::vector<double> v_vals, zs_vals, zp_vals;
+	PhysicalDouble step = V.step_size;
+	std::vector<PhysicalDouble> v_vals, zs_vals, zp_vals;
 	StepFunction rho_func = V.x_func();
 
 	for (size_t i = 0; i < num_points; i++) {
-		double rho = rho_func[i];
-		double v1 = V[i], v2 = V2[i], v3 = V3[i];
-		double zs = Zs[i], zs1 = Zs1[i], zs2 = Zs2[i];
-		double zp = Zp[i], zp1 = Zp1[i], zp2 = Zp2[i];
+		PhysicalDouble rho = rho_func[i];
+		PhysicalDouble v1 = V[i], v2 = V2[i], v3 = V3[i];
+		PhysicalDouble zs = Zs[i], zs1 = Zs1[i], zs2 = Zs2[i];
+		PhysicalDouble zp = Zp[i], zp1 = Zp1[i], zp2 = Zp2[i];
 
 		bool singularity = false;
 		std::string error;
@@ -268,37 +269,37 @@ System System::time_derivative() {
 		}
 
 		// V flow equation
-		auto v_integrand = [=](double y) {
-			double y2 = y * y;
-			double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-			double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-			double pref = prefactor(y2) - eta * r(y2);
-			double res = -2 * Power(gp, 2) * (-1 + n) * (v2 + y2 * zp1)
+		auto v_integrand = [=](PhysicalDouble y) {
+			PhysicalDouble y2 = y * y;
+			PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+			PhysicalDouble gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
+			PhysicalDouble pref = prefactor(y2) - eta * r(y2);
+			PhysicalDouble res = -2 * Power(gp, 2) * (-1 + n) * (v2 + y2 * zp1)
 					- 2 * Power(gs, 2) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
 			return std::pow(y, d - 1) * res * pref * std::pow(y, d - 1);
 		};
 		v_vals.push_back(gauss_legendre_integrate(v_integrand));
 
 		// Zs flow equation
-		if (rho <= std::numeric_limits<double>::epsilon()) {
-			auto zs_integrand = [=](double y) {
-				double y2 = y * y;
-				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-				double pref = prefactor(y2) - eta * r(y2);
+		if (rho <= std::numeric_limits<PhysicalDouble>::epsilon()) {
+			auto zs_integrand = [=](PhysicalDouble y) {
+				PhysicalDouble y2 = y * y;
+				PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+				PhysicalDouble pref = prefactor(y2) - eta * r(y2);
 
-				double res = -2 * Power(gp, 2) * ((-1 + n) * zp1 + zs1);
+				PhysicalDouble res = -2 * Power(gp, 2) * ((-1 + n) * zp1 + zs1);
 				return std::pow(y, d - 1) * res * pref;
 			};
 			zs_vals.push_back(gauss_legendre_integrate(zs_integrand));
 		} else {
 
-			auto zs_integrand = [=](double y) {
-				double y2 = y * y;
-				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-				double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-				double pref = prefactor(y2) - eta * r(y2);
+			auto zs_integrand = [=](PhysicalDouble y) {
+				PhysicalDouble y2 = y * y;
+				PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+				PhysicalDouble gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
+				PhysicalDouble pref = prefactor(y2) - eta * r(y2);
 
-				double res = 8 * Power(gp, 3) * (-1 + n)
+				PhysicalDouble res = 8 * Power(gp, 3) * (-1 + n)
 						* ((rho * y2 * Power(zp1, 2)) / d + (v2 + y2 * zp1) * (-zp + zs))
 						- (2 * Power(gp, 2) * (-1 + n) * (zp - zs + rho * zs1)) / rho
 						+ (8 * Power(gs, 3) * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) / d
@@ -319,26 +320,26 @@ System System::time_derivative() {
 		}
 
 		//Zp flow equation
-		if (rho <= std::numeric_limits<double>::epsilon()) {
-			auto zp_integrand = [=](double y) {
-				double y2 = y * y;
-				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-				double pref = prefactor(y2) - eta * r(y2);
+		if (rho <= std::numeric_limits<PhysicalDouble>::epsilon()) {
+			auto zp_integrand = [=](PhysicalDouble y) {
+				PhysicalDouble y2 = y * y;
+				PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+				PhysicalDouble pref = prefactor(y2) - eta * r(y2);
 
-				double res = -2 * Power(gp, 2) * ((-1 + n) * zp1 + zs1);
+				PhysicalDouble res = -2 * Power(gp, 2) * ((-1 + n) * zp1 + zs1);
 				return std::pow(y, d - 1) * res * pref;
 			};
 
 			zp_vals.push_back(gauss_legendre_integrate(zp_integrand));
 
 		} else {
-			auto zp_integrand = [=](double y) {
-				double y2 = y * y;
-				double gp = std::pow(v1 + y2 * zp + r(y2), -1);
-				double gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
-				double pref = prefactor(y2) - eta * r(y2);
+			auto zp_integrand = [=](PhysicalDouble y) {
+				PhysicalDouble y2 = y * y;
+				PhysicalDouble gp = std::pow(v1 + y2 * zp + r(y2), -1);
+				PhysicalDouble gs = std::pow(v1 + 2 * rho * v2 + y2 * zs + r(y2), -1);
+				PhysicalDouble pref = prefactor(y2) - eta * r(y2);
 
-				double res = (2
+				PhysicalDouble res = (2
 						* (d * Power(gp, 2) * (zp + rho * (zp1 - n * zp1) - zs)
 								- 2 * Power(gp, 2) * gs
 										* (-2 * y2 * Power(zp + rho * zp1 - zs, 2)
@@ -380,11 +381,11 @@ System System::time_derivative() {
 }
 
 void System::rescale() {
-	double potential_minimum = V().kappa_u().first;
-	if (potential_minimum <= std::numeric_limits<double>::epsilon()) {
+	PhysicalDouble potential_minimum = V().kappa_u().first;
+	if (potential_minimum <= std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::runtime_error("Potential minimum is out of the grid");
 	}
-	double z_norm;
+	PhysicalDouble z_norm;
 	if (sigma_normalization) {
 		z_norm = Zs()(potential_minimum);
 	} else {
@@ -408,8 +409,8 @@ void System::rescale() {
 void System::zoom_in() {
 	auto v_vals = V().vals, xs = V().xs();
 	const int DELTA_MIN_TO_DELTA_MAX = 10;
-	const double V_THRESHOLD = -a + .1;
-	const double V_GOAL = -a + .15;
+	const PhysicalDouble V_THRESHOLD = -a + .1;
+	const PhysicalDouble V_GOAL = -a + .15;
 
 	if (v_vals[0] > V_THRESHOLD && v_vals[0] < v_vals[1]) {
 		return;
@@ -432,8 +433,8 @@ void System::zoom_in() {
 		}
 	}
 
-	double rescale_begin = xs[rescale_begin_index];
-	double rescale_end = xs[rescale_end_index];
+	PhysicalDouble rescale_begin = xs[rescale_begin_index];
+	PhysicalDouble rescale_end = xs[rescale_end_index];
 	for (auto &&func : this->parameters) {
 		func = func.zoom_in(rescale_begin, rescale_end);
 	}
@@ -441,11 +442,11 @@ void System::zoom_in() {
 	zoomed = true;
 }
 
-double System::last_val() {
+PhysicalDouble System::last_val() {
 	return V().vals.back();
 }
 
-double System::first_val() {
+PhysicalDouble System::first_val() {
 	return V().vals.front();
 }
 
@@ -481,12 +482,12 @@ std::string System::print_phase(int phase) {
 	return message;
 }
 
-std::array<double, 3> System::kappa_u_z() {
+std::array<PhysicalDouble, 3> System::kappa_u_z() {
 	auto kappa_u = V().kappa_u();
-	double kappa = kappa_u.first, u = kappa_u.second;
-	double z = Zs()(kappa);
+	PhysicalDouble kappa = kappa_u.first, u = kappa_u.second;
+	PhysicalDouble z = Zs()(kappa);
 
-	return std::array<double, 3> { { kappa, u, z } };
+	return std::array<PhysicalDouble, 3> { { kappa, u, z } };
 }
 
 std::string System::print_configuration() {
@@ -516,34 +517,34 @@ System& System::operator+=(System rhs) {
 	return *this;
 }
 
-System& System::operator*=(double rhs) {
+System& System::operator*=(PhysicalDouble rhs) {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		parameters[i] = parameters[i] * rhs;
 	}
 	return *this;
 }
 
-double System::r(double y) {
+PhysicalDouble System::r(PhysicalDouble y) {
 	return a / 2 * R(y);
 }
 
-double System::rp(double y) {
+PhysicalDouble System::rp(PhysicalDouble y) {
 	return a / 2 * Rp(y);
 }
 
-double System::rp2(double y) {
+PhysicalDouble System::rp2(PhysicalDouble y) {
 	return a / 2 * Rp2(y);
 }
 
-double System::prefactor(double y) {
+PhysicalDouble System::prefactor(PhysicalDouble y) {
 	return a / 2 * Prefactor(y);
 }
 
-double System::G(double m, double Z, double y) {
+PhysicalDouble System::G(PhysicalDouble m, PhysicalDouble Z, PhysicalDouble y) {
 	return 1 / (m + Z * y + r(y));
 }
 
-double System::gauss_legendre_integrate(std::function<double(double)> f) {
+PhysicalDouble System::gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble)> f) {
 	return integrator->GLIntegrator.integrate(f);
 }
 
@@ -552,7 +553,7 @@ System operator+(System lhs, System rhs) {
 	return lhs;
 }
 
-System operator*(double lhs, System rhs) {
+System operator*(PhysicalDouble lhs, System rhs) {
 	rhs *= lhs;
 	return rhs;
 }
@@ -566,9 +567,9 @@ std::ostream& operator<<(std::ostream &out, System s) {
 	return out;
 }
 
-double time_eta_distance(System lhs, System rhs) {
-	double t_dist = lhs.time - rhs.time;
-	double eta_dist = lhs.eta - rhs.eta;
+PhysicalDouble time_eta_distance(System lhs, System rhs) {
+	PhysicalDouble t_dist = lhs.time - rhs.time;
+	PhysicalDouble eta_dist = lhs.eta - rhs.eta;
 
 	return std::sqrt(t_dist * t_dist + eta_dist * eta_dist);
 }

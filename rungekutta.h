@@ -11,16 +11,17 @@
 #include <vector>
 #include <iostream>
 #include "system.h"
+#include "realvector.h"
 
 class ButcherTable {
 public:
 	ButcherTable();
-	ButcherTable(size_t steps, std::vector<double> a_data, std::vector<double> b_data);
+	ButcherTable(size_t steps, std::vector<PhysicalDouble> a_data, std::vector<PhysicalDouble> b_data);
 
 	virtual ~ButcherTable();
 
-	std::vector<std::vector<double> > a;
-	std::vector<double> b;
+	std::vector<std::vector<PhysicalDouble> > a;
+	std::vector<PhysicalDouble> b;
 	void runge_kutta_step(System& initial) const;
 	bool usable=false;
 
