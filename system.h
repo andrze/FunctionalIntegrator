@@ -37,7 +37,7 @@ public:
 	PhysicalDouble u = 0.1;
 	PhysicalDouble a = 2.;
 
-	PhysicalDouble z_violation = 1.;
+	PhysicalDouble z_correction = 1.;
 	bool zoomed = false;
 
 	void reparametrize();

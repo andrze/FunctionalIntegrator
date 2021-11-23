@@ -402,33 +402,33 @@ void System::rescale() {
 				<< '\n';
 	}
 
-	z_dim = z_dim * z_norm;
-	z_violation *= z_norm;
+	z_dim *= z_norm;
+	z_correction *= z_norm;
 }
 
 void System::zoom_in() {
 	auto v_vals = V().vals, xs = V().xs();
-	const int DELTA_MIN_TO_DELTA_MAX = 10;
-	const PhysicalDouble V_THRESHOLD = -a + .1;
-	const PhysicalDouble V_GOAL = -a + .15;
+	const PhysicalDouble V_LOWER_THRESHOLD = -a + .1;
+	const PhysicalDouble V_UPPER_THRESHOLD = 2e+3;
+	const PhysicalDouble V_LOWER_GOAL = -a + .15;
+	const PhysicalDouble V_UPPER_GOAL = 1e+3;
 
-	if (v_vals[0] > V_THRESHOLD && v_vals[0] < v_vals[1]) {
+	if (v_vals[0] > V_LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals[v_vals.size()-1] < V_UPPER_THRESHOLD) {
 		return;
 	}
 
 	size_t rescale_begin_index = 0, rescale_end_index = xs.size() - 1;
 
 	for (size_t i = 1; i < v_vals.size(); i++) {
-		if (v_vals[i] > V_GOAL && v_vals[i] > v_vals[i - 1]) {
+		if (v_vals[i] > V_LOWER_GOAL && v_vals[i] > v_vals[i - 1]) {
 			rescale_begin_index = i;
 			break;
 		}
 	}
 
 	for (size_t i = rescale_begin_index + 1; i < v_vals.size(); i++) {
-		if (v_vals[i] > 0) {
-			rescale_end_index = std::min(rescale_begin_index + (i - rescale_begin_index) * (DELTA_MIN_TO_DELTA_MAX + 1),
-					xs.size() - 1);
+		if (v_vals[i] > V_UPPER_GOAL) {
+			rescale_end_index = i-1;
 			break;
 		}
 	}
