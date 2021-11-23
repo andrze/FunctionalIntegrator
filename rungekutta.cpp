@@ -59,10 +59,14 @@ void ButcherTable::runge_kutta_step(System &initial) const {
 		}
 	}
 
+	double z_der = b[0] * derivatives[0].eta;
+	derivatives[0] *= b[0];
 	for (size_t i = 0; i < b.size(); i++) {
-		initial += h * b[i] * derivatives[i];
-		initial.z_dim *= (1 + h * b[i] * derivatives[i].eta);
+		derivatives[0] += b[i] * derivatives[i];
+		z_der += b[i] * derivatives[i].eta;
 	}
+	initial += h * derivatives[0];
+	initial.z_dim *= (1 + h * z_der);
 
 	//initial.fix_v();
 	initial.time += h;
