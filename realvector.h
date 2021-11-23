@@ -6,7 +6,8 @@
 #include <ostream>
 #include <functional>
 
-typedef long double PhysicalDouble;
+typedef double PhysicalDouble;
+//typedef long double PhysicalDouble;
 
 class RealVector {
 public:
