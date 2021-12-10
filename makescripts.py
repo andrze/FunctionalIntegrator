@@ -22,22 +22,34 @@ if len(argv) == 2 and argv[1] in modes:
 else:
     raise ValueError("Unrecognised or missing calculation mode")
 
+# dimensions = [1.5,1.7,1.8,1.9,2.,2.1,2.5,3.]
+# ns = [1., 1.2, 1.4, 1.6, 1.8, 2.]
+# options = [[{'-kappa': 1.5}],
+#            [{'-u': 0.075}],
+#            [{'-dim': 2}],
+#            [{'-rhomax': 2.}],
+#            [{'-delta': 2e-5}],
+#            [{'-precision': 1e-6}],
+#            [{'-num_points': 150}],
+#            [{'-norm': 5}],
+#            [{'-a': 2}],
+#            [{'-N': n} for n in ns],
+#            [{'-sigma_normalization': 'false'}]]
 
-#dimensions = [1.5,1.7,1.8,1.9,2.,2.1,2.5,3.]
-ns = [1.,1.2,1.4,1.6,1.8,2.]
-options = [[{'-kappa': k} for k in [.6,.7,.8,.9,1.,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.]],
+
+options = [[{'-kappa': i * 0.1} for i in range(5, 20)],
            [{'-u': 0.075}],
            [{'-dim': 2}],
            [{'-rhomax': 2.}],
-           [{'-delta': 2e-5}],
+           [{'-delta': 1e-5}],
            [{'-precision': 1e-6}],
-           [{'-num_points': 200}],
+           [{'-num_points': 150}],
            [{'-norm': 5}],
-           [{'-a': a} for a in [1.,2.,3.]],
+           [{'-a': a} for a in [1., 2., 3.]],
            [{'-N': 2}],
            [{'-sigma_normalization': 'false'}]]
            # [{'-d': 2.}, {'-d': 2.05}, {'-d': 2.07}, {'-d': 2.1}, {'-d': 2.2},
-            # {'-d': 2.3}, {'-d': 2.5}, {'-d': 2.75}, {'-d': 2.9}, {'-d': 3}]]
+           #  {'-d': 2.3}, {'-d': 2.5}, {'-d': 2.75}, {'-d': 2.9}, {'-d': 3}]]
 
 all_configurations = options[0]
 for single_option in options[1:]:
@@ -46,8 +58,8 @@ for single_option in options[1:]:
         for configuration_set in all_configurations:
             conf = single_config.copy()
             conf.update(configuration_set)
-            if '-N' in conf.keys() and '-a' in conf.keys():
-                conf['-out'] = 'flow_k=%f_a=%f.csv' % (conf['-kappa'],conf['-a'])
+            if '-N' in conf.keys():
+                conf['-out'] = 'flow_k=%f_a=%f.csv' % (conf['-kappa'], conf['-a'])
             new_configurations.append(conf)
         
     all_configurations = new_configurations
@@ -59,7 +71,7 @@ if mode == "single":
     for i, conf in enumerate(all_configurations):
         filename = "FunctionalIntegrator_single_%02i.sh" % i
         file = open("%s/scripts/%s" % (project_dir, filename), 'w')
-        options = ["%s %s" % (k,v) for (k,v) in conf.items()]  
+        options = ["%s %s" % (k, v) for (k, v) in conf.items()]  
         
         basic_opt = [mode]
         opt = basic_opt + options
