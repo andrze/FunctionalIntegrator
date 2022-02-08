@@ -90,17 +90,17 @@ std::ostream& operator<<(std::ostream &out, ButcherTable t) {
 }
 
 //Euler
-const ButcherTable euler { 1, { 0 }, { 1. } };
+const ButcherTable euler { 1, { 0 }, { 1.l } };
 
 //RK4
-const ButcherTable rk4 { 4, { .5, 0, .5, 0, 0, 1 }, { 1. / 6, 1. / 3, 1. / 3, 1. / 6 } };
+const ButcherTable rk4 { 4, { .5l, 0, .5l, 0, 0, 1 }, { 1.l / 6, 1.l / 3, 1.l / 3, 1.l / 6 } };
 
 //SSP RK3
-std::array<PhysicalDouble, 3> a_ssprk3_a { { 1, 1. / 4, 1. / 4 } };
-std::array<PhysicalDouble, 3> b_ssprk3_a { { 1. / 6, 1. / 6, 2. / 3 } };
-const ButcherTable ssp_rk3 { 3, { 1, 1. / 4, 1. / 4 }, { 1. / 6, 1. / 6, 2. / 3 } };
+std::array<PhysicalDouble, 3> a_ssprk3_a { { 1, 1.l / 4, 1.l / 4 } };
+std::array<PhysicalDouble, 3> b_ssprk3_a { { 1.l / 6, 1.l / 6, 2.l / 3 } };
+const ButcherTable ssp_rk3 { 3, { 1, 1.l / 4, 1.l / 4 }, { 1.l / 6, 1.l / 6, 2.l / 3 } };
 
 //SSP RK(5,4)
-const ButcherTable ssp_rk4 { 5, { 0.39175, 0.21767, 0.36841, 0.082692, 0.13996, 0.25189, 0.067966, 0.11503, 0.20703,
-		0.54497 }, { 0.14681, 0.24848, 0.10426, 0.27444, 0.22601 } };
+const ButcherTable ssp_rk4 { 5, { 0.39175l, 0.21767l, 0.36841l, 0.082692l, 0.13996l, 0.25189l, 0.067966l, 0.11503l, 0.20703l,
+		0.54497l }, { 0.14681l, 0.24848l, 0.10426l, 0.27444l, 0.22601l } };
 
