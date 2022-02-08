@@ -32,7 +32,8 @@ PhysicalDouble lagrange_polynomial(PhysicalDouble x, std::vector<PhysicalDouble>
 }
 
 StepFunction::StepFunction() {
-
+	step_size = 0;
+	num_points = 0;
 }
 
 StepFunction::StepFunction(PhysicalDouble step_size, std::vector<PhysicalDouble> y, PhysicalDouble domain_begin) {

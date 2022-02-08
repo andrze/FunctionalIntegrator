@@ -1,7 +1,17 @@
 ODIR=obj
 CXX=g++
-CXXFLAGS= -std=c++14 -Wall -pedantic -O3
-CFLAGS=-I. -std=c++14 -Wall -pedantic -O3 -static 
+CXXFLAGS= -std=c++14 -Wall -pedantic  -pthread
+CFLAGS=-I. -std=c++14 -Wall -pedantic -pthread
+
+all: executable
+
+debug: CXXFLAGS += -g3 -fno-omit-frame-pointer 
+debug: CFLAGS += -g3 -fno-omit-frame-pointer
+debug: executable
+
+release: CXXFLAGS += -O3
+release: CFLAGS += -O3 
+release: executable
 
 DEPS = system.h \
 	   stepfunction.h \
@@ -38,7 +48,7 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 $(ODIR)/%.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CFLAGS)
 
-make: $(OBJ)
+executable: $(OBJ)
 	$(CXX) -o "FunctionalIntegrator" $^ $(CFLAGS)
 
 .PHONY: clean

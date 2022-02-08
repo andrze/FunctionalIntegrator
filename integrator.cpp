@@ -10,13 +10,71 @@
 #include "integrator.h"
 #include "rungekutta.h"
 
-Integrator::Integrator(std::vector<std::string> arg) :
-		system_configuration(arg) {
+
+void integrate(Task *task, Integrator *integrator) {
+	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));
+}
+
+void executeTasks(Integrator *integrator) {
+	while (true) {
+		std::unique_lock<std::mutex> lock(integrator->tasks_mutex);
+		while (integrator->tasks.empty()) {
+			integrator->tasks_not_empty.wait(lock);
+		}
+		Task *task = integrator->tasks.front();
+		integrator->tasks.pop();
+		lock.unlock();
+		if (task->shutdown) {
+			return;
+		}
+		integrate(task, integrator);
+		lock.lock();
+		integrator->active_tasks_count--;
+		if (integrator->active_tasks_count == 0) {
+			integrator->all_tasks_done.notify_one();
+		}
+		lock.unlock();
+	}
+}
+
+Task::Task(Integrator *integrator, std::function<PhysicalDouble(PhysicalDouble)> *integrand, PhysicalDouble *result) :
+		integrator(integrator), integrand(integrand), result(result) {
+}
+
+Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
+		system_configuration(arg), num_threads(num_threads), tasks_not_empty() {
+	if(num_threads <= 0){
+		throw std::runtime_error("Number of threads should be larger than 0.");
+	}
 
 	system = System(this, arg);
+
+	for (size_t i = 0; i < arg.size() - 1; i++) {
+		std::string opt = arg[i];
+		if (opt == "-kappa_min") {
+			kappa_min = std::strtod(arg[i + 1].c_str(), nullptr);
+		} else if (opt == "-precision") {
+			precision = std::strtod(arg[i + 1].c_str(), nullptr);
+		}
+	}
+
+	for (size_t i = 0; i < this->num_threads; i++) {
+		threads.emplace_back(executeTasks, this);
+	}
 }
 
 Integrator::~Integrator() {
+	Task task(this, nullptr, nullptr);
+	task.shutdown = true;
+	std::unique_lock<std::mutex> lock(tasks_mutex);
+	for (size_t t = 0; t < num_threads; t++) {
+		tasks.push(&task);
+		tasks_not_empty.notify_one();
+	}
+	lock.unlock();
+	for (auto &&t : threads) {
+		t.join();
+	}
 }
 
 void Integrator::restart_system(PhysicalDouble kappa) {
@@ -32,8 +90,8 @@ int Integrator::integrate() {
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		try {
 			runge_kutta_method.runge_kutta_step(system);
-			system.zoom_in();
-			system.rescale();
+			//system.zoom_in();
+			//system.rescale();
 
 		} catch (const std::runtime_error &err) {
 			std::cout << err.what() << "\n";
@@ -52,7 +110,7 @@ int Integrator::integrate() {
 			}
 		}
 
-		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.2) {
+		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.1) {
 			snapshots.push_back(system);
 		}
 
@@ -111,10 +169,10 @@ void Integrator::save_snapshots(std::string file) {
 
 	std::ofstream out(file.c_str());
 
-	out << "t,eta,Z\n";
+	out << "t,eta,Z,Z corrections\n";
 	for (size_t i = 0; i < snapshots.size(); i++) {
 		System s = snapshots[i];
-		out << s.time << ',' << s.eta << ',' << s.z_dim << '\n';
+		out << s.time << ',' << s.eta << ',' << s.z_dim << ',' << s.z_correction << '\n';
 	}
 	out << "\n";
 
@@ -127,4 +185,34 @@ void Integrator::save_snapshots(std::string file) {
 	}
 	out.close();
 	return;
+}
+
+void Integrator::push_integrand_function(std::function<PhysicalDouble(PhysicalDouble)> f) {
+	integrand_functions.push_back(f);
+}
+
+void Integrator::reset_integrals() {
+	integrand_functions.clear();
+}
+
+std::vector<PhysicalDouble>* Integrator::evaluate_integrals() {
+	size_t task_count = integrand_functions.size();
+	integral_values = std::vector<PhysicalDouble>(task_count);
+
+	std::vector<Task> task_vector;
+	task_vector.reserve(task_count);
+	std::unique_lock<std::mutex> lock(tasks_mutex);
+
+	for (size_t i = 0; i < task_count; i++) {
+		task_vector.emplace_back(this, &(integrand_functions[i]), &(integral_values[i]));
+		tasks.push(&task_vector.back());
+		active_tasks_count++;
+		tasks_not_empty.notify_one();
+	}
+
+	while (active_tasks_count != 0) {
+		all_tasks_done.wait(lock);
+	}
+
+	return &integral_values;
 }

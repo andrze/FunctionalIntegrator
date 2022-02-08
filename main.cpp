@@ -23,18 +23,19 @@ int main(int argc, char *argv[]) {
 	auto start = std::chrono::steady_clock::now();
 	std::vector<std::string> arg(argv, argv + argc);
 
-	Integrator integrator(arg);
 	std::string outfile = "outfile.csv";
+	size_t num_threads = 1;
 	for (size_t i = 0; i < arg.size() - 1; i++) {
 		std::string opt = arg[i];
 		if (opt == "-out") {
 			outfile = arg[i + 1];
-		} else if (opt == "-kappa_min") {
-			integrator.kappa_min = std::strtod(arg[i + 1].c_str(), nullptr);
-		} else if (opt == "-precision") {
-			integrator.precision = std::strtod(arg[i + 1].c_str(), nullptr);
+		} else if (opt == "-threads") {
+			num_threads = size_t(std::atoi(arg[i + 1].c_str()));
 		}
 	}
+	std::cout << "Running calculations on "<< num_threads << " threads.\n";
+
+	Integrator integrator(arg, num_threads);
 
 	std::string task = std::string(argv[1]); // First command line argument reserved for task specification
 	if (task == "single") {
@@ -50,7 +51,8 @@ int main(int argc, char *argv[]) {
 	integrator.save_snapshots(outfile);
 
 	auto end = std::chrono::steady_clock::now();
-	std::cout << "Calculations lasted for " << std::chrono::duration_cast<std::chrono::seconds>(end-start).count() << " seconds.\n";
+	std::cout << "Calculations lasted for " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
+			<< " seconds.\n";
 
 	return 0;
 }
