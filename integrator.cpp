@@ -37,7 +37,7 @@ void executeTasks(Integrator *integrator) {
 	}
 }
 
-Task::Task(Integrator *integrator, std::function<PhysicalDouble(PhysicalDouble)> *integrand, PhysicalDouble *result) :
+Task::Task(Integrator *integrator, std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> *integrand, PhysicalDouble *result) :
 		integrator(integrator), integrand(integrand), result(result) {
 }
 
@@ -187,7 +187,7 @@ void Integrator::save_snapshots(std::string file) {
 	return;
 }
 
-void Integrator::push_integrand_function(std::function<PhysicalDouble(PhysicalDouble)> f) {
+void Integrator::push_integrand_function(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f) {
 	integrand_functions.push_back(f);
 }
 

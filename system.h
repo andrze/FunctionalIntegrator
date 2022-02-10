@@ -65,12 +65,17 @@ public:
 	System& operator*=(PhysicalDouble rhs);
 
 	PhysicalDouble r(PhysicalDouble y);
+	PhysicalDouble r(PhysicalDouble y, PhysicalDouble expm);
 	PhysicalDouble rp(PhysicalDouble y);
+	PhysicalDouble rp(PhysicalDouble y, PhysicalDouble expm);
 	PhysicalDouble rp2(PhysicalDouble y);
+	PhysicalDouble rp2(PhysicalDouble y, PhysicalDouble expm);
 	PhysicalDouble prefactor(PhysicalDouble y);
+	PhysicalDouble prefactor(PhysicalDouble y, PhysicalDouble expm);
 	PhysicalDouble G(PhysicalDouble m, PhysicalDouble Z, PhysicalDouble y);
 
 	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble)> f);
+	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f);
 };
 
 System operator+(System lhs, System rhs);
