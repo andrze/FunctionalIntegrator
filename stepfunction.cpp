@@ -110,20 +110,22 @@ PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
 		return vals[pos];
 	}
 
+	PhysicalDouble inverse_step = 1/step_size;
+	PhysicalDouble normalization = 1;
 	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients;
 	if (n == 1) {
 		coefficients = DER1_COEFFICIENTS;
 		border_coefficients = DER1_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER1_SEMIBORDER_COEFFICIENTS;
+		normalization = inverse_step;
 	} else if (n == 2) {
 		coefficients = DER2_COEFFICIENTS;
 		border_coefficients = DER2_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER2_SEMIBORDER_COEFFICIENTS;
+		normalization = inverse_step*inverse_step;
 	} else if (n > 2) {
 		throw std::invalid_argument("Derivative of order larger than 2 are not implemented\n");
 	}
-
-	PhysicalDouble normalization = std::pow(step_size, -PhysicalDouble(n));
 
 	RealVector coefs(coefficients), border_coefs(border_coefficients), semiborder_coefs(semiborder_coefficients);
 
@@ -163,20 +165,24 @@ StepFunction StepFunction::derivative(size_t n) {
 	}
 	std::vector<PhysicalDouble> new_vals;
 
+
+	PhysicalDouble inverse_step = 1/step_size;
+	PhysicalDouble normalization = 1;
 	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients;
 	if (n == 1) {
 		coefficients = DER1_COEFFICIENTS;
 		border_coefficients = DER1_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER1_SEMIBORDER_COEFFICIENTS;
+		normalization = inverse_step;
 	} else if (n == 2) {
 		coefficients = DER2_COEFFICIENTS;
 		border_coefficients = DER2_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER2_SEMIBORDER_COEFFICIENTS;
+		normalization = inverse_step*inverse_step;
 	} else if (n > 2) {
 		throw std::invalid_argument("Derivative of order larger than 2 are not implemented\n");
 	}
 
-	PhysicalDouble normalization = std::pow(step_size, -PhysicalDouble(n));
 	for (auto &c : coefficients) {
 		c *= normalization;
 	}

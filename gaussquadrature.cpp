@@ -1,4 +1,5 @@
 #include "gaussquadrature.h"
+#include "regulator.h"
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
@@ -8,6 +9,11 @@ IntegralConfiguration::IntegralConfiguration(PhysicalDouble start, PhysicalDoubl
 }
 
 GaussQuadrature::GaussQuadrature() {
+	d = 0;
+}
+
+GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
+		d(d) {
 
 	roots[1] = { 0l };
 	weights[1] = { 2.0000000000000000000000000l };
@@ -579,20 +585,21 @@ GaussQuadrature::GaussQuadrature() {
 			0.0045212770985331912584717l };
 
 	for (auto &&config : configurations) {
-		std::vector<PhysicalDouble> one_config_eval_points;
-		std::vector<PhysicalDouble> one_config_expm1_points;
+		std::vector<std::array<PhysicalDouble,6> > one_config_eval_points;
 		for (size_t k = 0; k < config.n; k++) {
 			PhysicalDouble point = (config.start + config.end) / 2
 					+ (config.end - config.start) * roots[config.n][k] / 2;
-			one_config_eval_points.push_back(point * point);
-			one_config_expm1_points.push_back(std::expm1(point * point));
+			PhysicalDouble y2 = point*point;
+			std::array<PhysicalDouble,6> eval_point {
+				y2, std::pow(point, d-1), R(y2), Rp(y2), Rp2(y2), Prefactor(y2)
+			};
+
+			one_config_eval_points.push_back(eval_point);
 		}
 		evaluation_points.push_back(one_config_eval_points);
-		expm1_points.push_back(one_config_expm1_points);
-
 	}
 }
-
+/*
 PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(PhysicalDouble)> f,
 		size_t configuration_index) const {
 	IntegralConfiguration conf = configurations[configuration_index];
@@ -611,9 +618,10 @@ PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(P
 	}
 
 	return sum * (b - a) / 2;
-}
+}*/
 
-PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f,
+PhysicalDouble GaussQuadrature::partial_integrate(
+		std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f,
 		size_t configuration_index) const {
 	IntegralConfiguration conf = configurations[configuration_index];
 	PhysicalDouble b = conf.end, a = conf.start;
@@ -627,12 +635,13 @@ PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(P
 
 	PhysicalDouble sum = 0;
 	for (size_t k = 0; k < n; k++) {
-		sum += weights[n][k] * f(evaluation_points[configuration_index][k], expm1_points[configuration_index][k]);
+		sum += weights[n][k]
+				* f(evaluation_points[configuration_index][k]);
 	}
 
 	return sum * (b - a) / 2;
 }
-
+/*
 PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(PhysicalDouble)> f) const {
 	PhysicalDouble integral = 0;
 
@@ -641,9 +650,10 @@ PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(PhysicalD
 	}
 
 	return integral;
-}
+}*/
 
-PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f) const {
+PhysicalDouble GaussQuadrature::integrate(
+		std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f) const {
 	PhysicalDouble integral = 0;
 
 	for (size_t k = 0; k < configurations.size(); k++) {

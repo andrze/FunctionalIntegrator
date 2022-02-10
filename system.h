@@ -75,7 +75,7 @@ public:
 	PhysicalDouble G(PhysicalDouble m, PhysicalDouble Z, PhysicalDouble y);
 
 	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble)> f);
-	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f);
+	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f);
 };
 
 System operator+(System lhs, System rhs);

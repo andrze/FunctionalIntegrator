@@ -24,16 +24,18 @@
 #include "realvector.h"
 
 struct Task {
-	Task(Integrator *integrator, std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> *integrand, PhysicalDouble *result);
+	Task(Integrator *integrator,
+			std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> *integrand,
+			PhysicalDouble *result);
 	class Integrator *integrator;
-	std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> *integrand;
+	std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> *integrand;
 	PhysicalDouble *result;
 	bool shutdown = false;
 };
 
 class Integrator {
 public:
-	Integrator(std::vector<std::string> arg, size_t num_threads=1);
+	Integrator(std::vector<std::string> arg, size_t num_threads = 1);
 	virtual ~Integrator();
 
 	std::vector<std::string> system_configuration;
@@ -59,15 +61,14 @@ public:
 	std::condition_variable all_tasks_done; //notified when tasksActive is set to 0
 	std::condition_variable tasks_not_empty; //notified when task is being pushed to tasks queue
 
-	const GaussQuadrature GLIntegrator;
+	GaussQuadrature GLIntegrator;
 
-	void push_integrand_function(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f);
+	void push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f);
 	void reset_integrals();
 	std::vector<PhysicalDouble>* evaluate_integrals();
 
-
 private:
-	std::vector<std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> > integrand_functions; //vector of integrals to be carried out
+	std::vector<std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> > integrand_functions; //vector of integrals to be carried out
 	std::vector<PhysicalDouble> integral_values; //vector of results of the integrals
 	std::vector<std::thread> threads; //vector of threads working on assigned tasks
 	std::vector<std::unique_ptr<std::thread> > workers;

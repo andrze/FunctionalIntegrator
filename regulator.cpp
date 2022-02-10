@@ -38,7 +38,7 @@ PhysicalDouble Rp(PhysicalDouble y) {
 	}
 	PhysicalDouble expm = expm1(y);
 	PhysicalDouble expy = expm + 1;
-	PhysicalDouble denominator = std::pow(expm, -2.);
+	PhysicalDouble denominator = std::pow(expm, -2);
 
 	return 2 * (expm - y * expy) * denominator;
 }
@@ -52,7 +52,7 @@ PhysicalDouble Rp(PhysicalDouble y, PhysicalDouble expm) {
 		return 0.;
 	}
 	PhysicalDouble expy = expm + 1;
-	PhysicalDouble denominator = std::pow(expm, -2.);
+	PhysicalDouble denominator = std::pow(expm, -2);
 
 	return 2 * (expm - y * expy) * denominator;
 }
@@ -67,7 +67,7 @@ PhysicalDouble Rp2(PhysicalDouble y) {
 	}
 	PhysicalDouble expm = expm1(y);
 	PhysicalDouble expy = expm + 1;
-	PhysicalDouble denominator = std::pow(expm, -3.);
+	PhysicalDouble denominator = std::pow(expm, -3);
 
 	return 2 * expy * (-2 * expm + y * (expy + 1)) * denominator;
 }
@@ -81,7 +81,7 @@ PhysicalDouble Rp2(PhysicalDouble y, PhysicalDouble expm) {
 		return 0.;
 	}
 	PhysicalDouble expy = expm + 1;
-	PhysicalDouble denominator = std::pow(expm, -3.);
+	PhysicalDouble denominator = std::pow(expm, -3);
 
 	return 2 * expy * (-2 * expm + y * (expy + 1)) * denominator;
 }

@@ -10,7 +10,6 @@
 #include "integrator.h"
 #include "rungekutta.h"
 
-
 void integrate(Task *task, Integrator *integrator) {
 	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));
 }
@@ -37,13 +36,15 @@ void executeTasks(Integrator *integrator) {
 	}
 }
 
-Task::Task(Integrator *integrator, std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> *integrand, PhysicalDouble *result) :
+Task::Task(Integrator *integrator,
+		std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> *integrand,
+		PhysicalDouble *result) :
 		integrator(integrator), integrand(integrand), result(result) {
 }
 
 Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
 		system_configuration(arg), num_threads(num_threads), tasks_not_empty() {
-	if(num_threads <= 0){
+	if (num_threads <= 0) {
 		throw std::runtime_error("Number of threads should be larger than 0.");
 	}
 
@@ -61,6 +62,8 @@ Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
 	for (size_t i = 0; i < this->num_threads; i++) {
 		threads.emplace_back(executeTasks, this);
 	}
+
+	GLIntegrator = GaussQuadrature(system.d);
 }
 
 Integrator::~Integrator() {
@@ -187,7 +190,7 @@ void Integrator::save_snapshots(std::string file) {
 	return;
 }
 
-void Integrator::push_integrand_function(std::function<PhysicalDouble(PhysicalDouble, PhysicalDouble)> f) {
+void Integrator::push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f) {
 	integrand_functions.push_back(f);
 }
 
