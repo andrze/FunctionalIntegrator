@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include "integrator.h"
 #include "rungekutta.h"
+#include "terminalplot.h"
 
 void integrate(Task *task, Integrator *integrator) {
 	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));
@@ -89,6 +90,7 @@ int Integrator::integrate() {
 	size_t max_steps = 10e+7;
 	PhysicalDouble max_time = 100;
 	snapshots.push_back(system);
+	TerminalPlot plot;
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		try {
@@ -118,7 +120,8 @@ int Integrator::integrate() {
 		}
 
 		if (system.step % 500 == 0) {
-			std::cout << system.time << ", " << std::flush;
+			std::cout << system.time << '\n';
+			plot.plot(system.parameters);
 		}
 	}
 	std::cout << '\n';
