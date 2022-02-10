@@ -444,4 +444,3 @@ std::ostream& operator<<(std::ostream &out, StepFunction f) {
 	out << std::endl;
 	return out;
 }
-;
