@@ -24,6 +24,7 @@ public:
 	StepFunction derivative(size_t n = 1);
 	RealVector interval(size_t begin, size_t end);
 	StepFunction zoom_in(PhysicalDouble begin, PhysicalDouble end);
+    StepFunction cut_domain(size_t begin, size_t end);
 
 	PhysicalDouble integral();
 	PhysicalDouble norm();

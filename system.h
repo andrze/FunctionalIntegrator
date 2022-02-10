@@ -52,6 +52,7 @@ public:
 
 	void rescale();
 	void zoom_in();
+	void cut_domain();
 
 	PhysicalDouble last_val();
 	PhysicalDouble first_val();

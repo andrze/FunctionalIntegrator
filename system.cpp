@@ -469,6 +469,42 @@ void System::zoom_in() {
 	zoomed = true;
 }
 
+void System::cut_domain(){
+    auto v_vals = V().vals, xs = V().xs();
+    const double LOWER_THRESHOLD = -a+.01;
+    const double UPPER_THRESHOLD = 2e+4;
+
+    if(v_vals[0] > LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals.back() < UPPER_THRESHOLD){
+        return;
+    }
+
+    size_t rescale_begin = 0, rescale_end=xs.size()-1;
+
+    for(size_t i=1; i<v_vals.size(); i++){
+        if(v_vals[i] > LOWER_THRESHOLD && v_vals[i] > v_vals[i-1]){
+            rescale_begin = i;
+            break;
+        }
+    }
+
+    if(v_vals.back() < UPPER_THRESHOLD){
+        rescale_end = v_vals.size();
+    } else {
+        for(size_t i=rescale_begin+1; i<v_vals.size(); i++){
+            if(v_vals[i] > UPPER_THRESHOLD){
+                rescale_end = i;
+                break;
+            }
+        }
+    }
+
+    for(auto&& func: this->parameters){
+        func = func.cut_domain(rescale_begin, rescale_end);
+    }
+    std::cout << "Zooming in on the interval [" << xs[rescale_begin] << ',' << xs[rescale_end-1] << "].\n";
+    zoomed = true;
+}
+
 PhysicalDouble System::last_val() {
 	return V().vals.back();
 }

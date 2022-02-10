@@ -268,6 +268,13 @@ StepFunction StepFunction::zoom_in(PhysicalDouble begin, PhysicalDouble end) {
 	return StepFunction(new_step, new_vals, begin);
 }
 
+StepFunction StepFunction::cut_domain(size_t begin, size_t end){
+    std::vector<double> new_vals(vals.begin()+int(begin), vals.begin()+int(end));
+
+    double new_domain_begin = domain_begin + step_size*int(begin);
+    return StepFunction(step_size, new_vals, new_domain_begin);
+}
+
 PhysicalDouble StepFunction::integral() {
 	PhysicalDouble sum = 0;
 
