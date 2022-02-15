@@ -619,11 +619,11 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
  return sum * (b - a) / 2;
  }*/
 
-PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f,
+PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)>& f,
 		size_t configuration_index) const {
-	IntegralConfiguration conf = configurations[configuration_index];
-	PhysicalDouble b = conf.end, a = conf.start;
-	size_t n = conf.n;
+	const IntegralConfiguration& conf = configurations[configuration_index];
+	const PhysicalDouble& b = conf.end, a = conf.start;
+	const size_t& n = conf.n;
 	if (n == 0) {
 		throw(std::invalid_argument("Number of integration points must be positive"));
 	}
@@ -649,7 +649,7 @@ PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(s
  return integral;
  }*/
 
-PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f) const {
+PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)>& f) const {
 	PhysicalDouble integral = 0;
 
 	for (size_t k = 0; k < configurations.size(); k++) {
