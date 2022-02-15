@@ -27,7 +27,7 @@ public:
 private:
 	std::array<std::array<PhysicalDouble, 41>, 41> roots;
 	std::array<std::array<PhysicalDouble, 41>, 41> weights;
-	std::vector<IntegralConfiguration> configurations = { { 0, 0.1, 15 }, { 0.1, 3., 40 }, { 3., 6., 20 } };
+	std::vector<IntegralConfiguration> configurations = { { 0, 0.1, 25 }, { 0.1, 3., 40 }, { 3., 6., 20 } };
 	std::vector<std::vector<std::array<PhysicalDouble,6> > > evaluation_points;
 
 	PhysicalDouble d;
