@@ -120,7 +120,9 @@ void System::find_eta() {
 	PhysicalDouble zp = Zp()(potential_minimum);
 	PhysicalDouble zp1 = Zp().derivative(1)(potential_minimum);
 	PhysicalDouble zp2 = Zp().derivative(2)(potential_minimum);
-	PhysicalDouble rho = potential_minimum;
+	PhysicalDouble rho = potential_minimum, rho_inv = 1 / rho;
+
+	PhysicalDouble d_inv = 1 / d;
 
 	PhysicalDouble z, z1;
 	if (sigma_normalization) {
@@ -163,18 +165,18 @@ void System::find_eta() {
 			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp, gp4 = gp2 * gp2, gp5 = gp4 * gp;
 			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
 
-			return 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) / d + (v2 + y2 * zp1) * (-zp + zs))
-					- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) / rho
-					+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) / d
+			return 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
+					- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
+					+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
 					- 2 * gs2 * (zs1 + 2 * rho * zs2)
-					+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) / d
+					+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
 					- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-							* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) / d
+							* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
 					- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1)
-							* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) / d
+							* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) * d_inv
 					- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
 							* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-									+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) / d;
+									+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
 		} else {
 			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
@@ -199,7 +201,7 @@ void System::find_eta() {
 															+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs)
 																	* (-(rho * zp1) + zs + rpy)
 															+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y))))
-					/ (d * rho);
+					* d_inv * rho_inv;
 		}
 
 	};
@@ -252,10 +254,12 @@ System System::time_derivative() {
 	PhysicalDouble step = V.step_size;
 	StepFunction rho_func = V.x_func();
 
-	integrator->reset_integrals(num_points*3);
+	integrator->reset_integrals(num_points * 3);
+
+	PhysicalDouble d_inv = 1 / d;
 
 	for (size_t i = 0; i < num_points; i++) {
-		PhysicalDouble rho = rho_func[i];
+		PhysicalDouble rho = rho_func[i], rho_inv = 1 / rho;
 		PhysicalDouble v1 = V[i], v2 = V2[i], v3 = V3[i];
 		PhysicalDouble zs = Zs[i], zs1 = Zs1[i], zs2 = Zs2[i];
 		PhysicalDouble zp = Zp[i], zp1 = Zp1[i], zp2 = Zp2[i];
@@ -308,8 +312,8 @@ System System::time_derivative() {
 		} else {
 
 			auto zs_integrand = [=](std::array<PhysicalDouble, 6> args) {
-				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a
-						* args[4], prefactor = a * args[5];
+				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4],
+						prefactor = a * args[5];
 				PhysicalDouble pref = prefactor - eta * ry;
 				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
@@ -317,18 +321,19 @@ System System::time_derivative() {
 				PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
 				//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 
-				PhysicalDouble res = 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) / d + (v2 + y2 * zp1) * (-zp + zs))
-						- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) / rho
-						+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) / d
+				PhysicalDouble res = 8 * gp3 * (-1 + n)
+						* ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
+						- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
+						+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
 						- 2 * gs2 * (zs1 + 2 * rho * zs2)
-						+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) / d
+						+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
 						- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) / d
+								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
 						- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1)
-								* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) / d
+								* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) * d_inv
 						- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
 								* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-										+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) / d;
+										+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
 				return yd * res * pref;
 			};
 
@@ -349,8 +354,8 @@ System System::time_derivative() {
 			integrator->push_integrand_function(zp_integrand);
 		} else {
 			auto zp_integrand = [=](std::array<PhysicalDouble, 6> args) {
-				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a
-						* args[4], prefactor = a * args[5];
+				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4],
+						prefactor = a * args[5];
 				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
 				PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
@@ -377,7 +382,7 @@ System System::time_derivative() {
 																		+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs))
 																				* (zp - zs) * (-(rho * zp1) + zs + rpy)
 																		+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs))
-																				* rp2y)))) / (d * rho);
+																				* rp2y)))) * d_inv * rho_inv;
 				return res * pref * yd;
 			};
 			integrator->push_integrand_function(zp_integrand);
@@ -469,40 +474,40 @@ void System::zoom_in() {
 	zoomed = true;
 }
 
-void System::cut_domain(){
-    auto v_vals = V().vals, xs = V().xs();
-    const double LOWER_THRESHOLD = -a+.01;
-    const double UPPER_THRESHOLD = 2e+4;
+void System::cut_domain() {
+	auto v_vals = V().vals, xs = V().xs();
+	const double LOWER_THRESHOLD = -a + .05;
+	const double UPPER_THRESHOLD = 2e+4;
 
-    if(v_vals[0] > LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals.back() < UPPER_THRESHOLD){
-        return;
-    }
+	if (v_vals[0] > LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals.back() < UPPER_THRESHOLD) {
+		return;
+	}
 
-    size_t rescale_begin = 0, rescale_end=xs.size()-1;
+	size_t rescale_begin = 0, rescale_end = xs.size() - 1;
 
-    for(size_t i=1; i<v_vals.size(); i++){
-        if(v_vals[i] > LOWER_THRESHOLD && v_vals[i] > v_vals[i-1]){
-            rescale_begin = i;
-            break;
-        }
-    }
+	for (size_t i = 1; i < v_vals.size(); i++) {
+		if (v_vals[i] > LOWER_THRESHOLD && v_vals[i] > v_vals[i - 1]) {
+			rescale_begin = i;
+			break;
+		}
+	}
 
-    if(v_vals.back() < UPPER_THRESHOLD){
-        rescale_end = v_vals.size();
-    } else {
-        for(size_t i=rescale_begin+1; i<v_vals.size(); i++){
-            if(v_vals[i] > UPPER_THRESHOLD){
-                rescale_end = i;
-                break;
-            }
-        }
-    }
+	if (v_vals.back() < UPPER_THRESHOLD) {
+		rescale_end = v_vals.size();
+	} else {
+		for (size_t i = rescale_begin + 1; i < v_vals.size(); i++) {
+			if (v_vals[i] > UPPER_THRESHOLD) {
+				rescale_end = i;
+				break;
+			}
+		}
+	}
 
-    for(auto&& func: this->parameters){
-        func = func.cut_domain(rescale_begin, rescale_end);
-    }
-    std::cout << "Zooming in on the interval [" << xs[rescale_begin] << ',' << xs[rescale_end-1] << "].\n";
-    zoomed = true;
+	for (auto &&func : this->parameters) {
+		func = func.cut_domain(rescale_begin, rescale_end);
+	}
+	std::cout << "Zooming in on the interval [" << xs[rescale_begin] << ',' << xs[rescale_end - 1] << "].\n";
+	zoomed = true;
 }
 
 PhysicalDouble System::last_val() {
