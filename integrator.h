@@ -43,7 +43,7 @@ public:
 
 	std::vector<System> snapshots;
 
-	const ButcherTable runge_kutta_method = ssp_rk4;
+	const ButcherTable runge_kutta_method = rk4;//ssp_rk4;
 
 	PhysicalDouble kappa_min = 0;
 	PhysicalDouble precision = 1e-4;
@@ -64,7 +64,7 @@ public:
 	GaussQuadrature GLIntegrator;
 
 	void push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f);
-	void reset_integrals();
+	void reset_integrals(size_t new_size=0);
 	std::vector<PhysicalDouble>* evaluate_integrals();
 
 private:

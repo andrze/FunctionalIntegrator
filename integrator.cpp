@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <iomanip>
 #include "integrator.h"
 #include "rungekutta.h"
 #include "terminalplot.h"
@@ -37,8 +38,7 @@ void executeTasks(Integrator *integrator) {
 	}
 }
 
-Task::Task(Integrator *integrator,
-		std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> *integrand,
+Task::Task(Integrator *integrator, std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand,
 		PhysicalDouble *result) :
 		integrator(integrator), integrand(integrand), result(result) {
 }
@@ -95,6 +95,7 @@ int Integrator::integrate() {
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		try {
 			runge_kutta_method.runge_kutta_step(system);
+			system.cut_domain();
 			//system.zoom_in();
 			//system.rescale();
 
@@ -120,7 +121,7 @@ int Integrator::integrate() {
 		}
 
 		if (system.step % 500 == 0) {
-			std::cout << system.time << '\n';
+			std::cout << std::setprecision(5) << system.time << ", " << system.eta << '\n';
 			plot.plot(system.parameters);
 		}
 	}
@@ -193,12 +194,15 @@ void Integrator::save_snapshots(std::string file) {
 	return;
 }
 
-void Integrator::push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f) {
+void Integrator::push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f) {
 	integrand_functions.push_back(f);
 }
 
-void Integrator::reset_integrals() {
+void Integrator::reset_integrals(size_t new_size) {
 	integrand_functions.clear();
+	if (new_size > 0) {
+		integrand_functions.reserve(new_size);
+	}
 }
 
 std::vector<PhysicalDouble>* Integrator::evaluate_integrals() {
