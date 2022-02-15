@@ -1,17 +1,25 @@
 ODIR=obj
 CXX=g++
-CXXFLAGS= -std=c++14 -Wall -pedantic  -pthread
-CFLAGS=-I. -std=c++14 -Wall -pedantic -pthread
+CXXFLAGS= -std=c++11 -Wall -pedantic 
+CFLAGS=-I. -std=c++11 -Wall -pedantic
 
 all: executable
 
-debug: CXXFLAGS += -g3 -fno-omit-frame-pointer 
-debug: CFLAGS += -g3 -fno-omit-frame-pointer
+debug: CXXFLAGS += -g3 -fno-omit-frame-pointer -pthread
+debug: CFLAGS += -g3 -fno-omit-frame-pointer -pthread
 debug: executable
 
-release: CXXFLAGS += -O3
-release: CFLAGS += -O3 
+release: CXXFLAGS += -O3 -pthread
+release: CFLAGS += -O3  -pthread
 release: executable
+
+profile: CXXFLAGS += -O3 -g3 -pthread
+profile: CFLAGS += -O3 -g3 -pthread
+profile: executable
+
+#static: CXXFLAGS += -static -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -O3
+#static: CFLAGS += -static -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -O3
+#static: executable
 
 DEPS = system.h \
 	   stepfunction.h \
@@ -21,7 +29,8 @@ DEPS = system.h \
        plot.h \
 	   integrator.h \
 	   gaussquadrature.h \
-	   rungekutta.h
+	   rungekutta.h \
+	   terminalplot.h
 
 _OBJ = main.o \
 	   system.o \
@@ -32,7 +41,8 @@ _OBJ = main.o \
 	   plot.o \
 	   integrator.o \
 	   gaussquadrature.o \
-	   rungekutta.o
+	   rungekutta.o \
+	   terminalplot.o
 	   
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
