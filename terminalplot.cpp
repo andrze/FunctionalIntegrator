@@ -37,14 +37,15 @@ void TerminalPlot::plot(std::vector<StepFunction> functions) {
 	std::vector<double> x_vals = functions.front().xs();
 
 	double y_unit = (max - min) / height;
-	double x_unit = (x_vals.back() - x_vals.front()) / width;
+	double x_start = x_vals.front();
+	double x_unit = (x_vals.back() - x_start) / width;
 
 	int zero_pos = -min / y_unit;
 
 	std::vector<char> empty_row(size_t(width), ' ');
 	std::vector<std::vector<char> > plot_symbols(size_t(height), empty_row);
 	for (int j = 0; j < width; j++) {
-		double x = x_unit * j;
+		double x = x_start + x_unit * j;
 		for (int i = 0; i < int(functions.size()); i++) {
 			double val = functions[size_t(i)](x);
 			int pos = static_cast<size_t>((val - min) / y_unit);
