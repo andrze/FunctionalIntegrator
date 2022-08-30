@@ -45,7 +45,7 @@ public:
 
 	const ButcherTable runge_kutta_method = rk4;//ssp_rk4;
 
-	PhysicalDouble kappa_min = 0;
+	PhysicalDouble kappa_min = 0, kappa_max;
 	PhysicalDouble precision = 1e-4;
 
 	void restart_system(PhysicalDouble kappa = -1);

@@ -19,7 +19,8 @@ System::System() {
 
 System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n,
 	bool sigma_normalization) :
-	integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization) {
+	integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization), num_points(
+		V.num_points), step(V.step_size) {
 	parameters.push_back(V);
 	parameters.push_back(StepFunction(V.step_size, V.num_points, [](PhysicalDouble) {
 		return 1;
@@ -28,6 +29,7 @@ System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, P
 		return 1;
 	}));
 	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
+
 }
 
 System::System(Integrator *integrator, std::vector<std::string> configuration, PhysicalDouble kappa) :
@@ -65,14 +67,13 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, P
 	reparametrize();
 
 	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
+	step = this->kappa * rho0_to_rhomax / num_points;
 
 }
 
 void System::reparametrize() {
 
-	PhysicalDouble step_size = kappa * rho0_to_rhomax / num_points;
-
-	StepFunction V(step_size, num_points, [&](PhysicalDouble x) {
+	StepFunction V(step, num_points, [&](PhysicalDouble x) {
 		return u * (x - kappa);
 	});
 
@@ -149,8 +150,6 @@ void System::find_eta_minimum() {
 	PhysicalDouble zp1 = Zp1(potential_minimum);
 	PhysicalDouble zp2 = Zp2(potential_minimum);
 	PhysicalDouble rho = potential_minimum, rho_inv = 1 / rho;
-
-	PhysicalDouble d_inv = 1 / d;
 
 	PhysicalDouble z, z1;
 	if (sigma_normalization) {
@@ -275,8 +274,6 @@ void System::find_eta_norm_point() {
 	PhysicalDouble zp2 = Zp2[norm_point];
 	PhysicalDouble rho = rho_func[norm_point], rho_inv = 1 / rho;
 
-	PhysicalDouble d_inv = 1 / d;
-
 	PhysicalDouble z, z1;
 	if (sigma_normalization) {
 		z = zs;
@@ -366,23 +363,8 @@ void System::find_eta_norm_point() {
 System System::time_derivative() {
 	precalculate_rho_derivatives();
 	find_eta();
-//	StepFunction V = this->V();
-//	StepFunction V2 = V.derivative(1);
-//	StepFunction V3 = V.derivative(2);
-//	StepFunction Zs = this->Zs();
-//	StepFunction Zs1 = Zs.derivative(1);
-//	StepFunction Zs2 = Zs.derivative(2);
-//	StepFunction Zp = this->Zp();
-//	StepFunction Zp1 = Zp.derivative(1);
-//	StepFunction Zp2 = Zp.derivative(2);
-
-	size_t num_points = V().num_points;
-	PhysicalDouble step = V().step_size;
-//	StepFunction rho_func = V.x_func();
 
 	integrator->reset_integrals(num_points * 3);
-
-	PhysicalDouble d_inv = 1 / d;
 
 	for (size_t i = 0; i < num_points; i++) {
 		PhysicalDouble rho = rho_func[i], rho_inv = 1 / rho;
@@ -415,7 +397,6 @@ System System::time_derivative() {
 			PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
 			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-			//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 			PhysicalDouble pref = prefactor - eta * ry;
 			PhysicalDouble res = -2 * pow2(gp) * (-1 + n) * (v2 + y2 * zp1)
 				- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
@@ -428,7 +409,6 @@ System System::time_derivative() {
 			auto zs_integrand = [=](std::array<PhysicalDouble, 6> args) {
 				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
 				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-				//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 				PhysicalDouble pref = prefactor - eta * ry;
 
 				PhysicalDouble res = -2 * pow2(gp) * ((-1 + n) * zp1 + zs1);
@@ -445,7 +425,6 @@ System System::time_derivative() {
 				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
 				PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp, gp4 = gp2 * gp2, gp5 = gp4 * gp;
 				PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
-				//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 
 				PhysicalDouble res = 8 * gp3 * (-1 + n)
 					* ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
@@ -486,7 +465,6 @@ System System::time_derivative() {
 				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
 				PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
 				PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs;
-				//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 				PhysicalDouble pref = prefactor - eta * ry;
 
 				PhysicalDouble res = (2
@@ -622,7 +600,7 @@ void System::cut_domain() {
 	if (v_vals.back() > UPPER_THRESHOLD) {
 		for (size_t i = rescale_begin + 1; i < v_vals.size(); i++) {
 			if (v_vals[i] > UPPER_THRESHOLD) {
-				rescale_end = i-1;
+				rescale_end = i - 1;
 				break;
 			}
 		}
@@ -656,7 +634,7 @@ int System::find_phase() {
 	return phase;
 }
 
-std::string System::print_phase(int phase) {
+std::string System::print_phase() {
 	if (phase == 0) {
 		if (this->phase != 0) {
 			phase = this->phase;
@@ -680,10 +658,9 @@ std::string System::print_phase(int phase) {
 
 std::array<PhysicalDouble, 3> System::kappa_u_z() {
 	auto kappa_u = V().kappa_u();
-	PhysicalDouble kappa = kappa_u.first, u = kappa_u.second;
 	PhysicalDouble z = Zs()(kappa);
 
-	return std::array<PhysicalDouble, 3> { { kappa, u, z } };
+	return std::array<PhysicalDouble, 3> { { kappa_u.first, kappa_u.second, z } };
 }
 
 std::string System::print_configuration() {

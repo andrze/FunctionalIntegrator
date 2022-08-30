@@ -139,7 +139,7 @@ int Integrator::integrate(bool verbose) {
 			system.time_after_phase_diagnosis -= system.delta_t;
 			if (system.time_after_phase_diagnosis <= 0) {
 				std::cout << '\n';
-				std::cout << system.print_phase(phase);
+				std::cout << system.print_phase();
 				return phase;
 			}
 		}
@@ -168,7 +168,7 @@ int Integrator::integrate(bool verbose) {
 }
 
 void Integrator::find_criticality() {
-	PhysicalDouble kappa_max = system.kappa, kappa_min = this->kappa_min;
+	kappa_max = system.kappa;
 
 	size_t max_iter = 50;
 

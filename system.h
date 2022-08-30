@@ -65,7 +65,7 @@ public:
 	PhysicalDouble last_val();
 	PhysicalDouble first_val();
 	int find_phase();
-	std::string print_phase(int phase = 0);
+	std::string print_phase();
 
 	std::array<PhysicalDouble, 3> kappa_u_z();
 	std::string print_configuration();
