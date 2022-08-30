@@ -8,3 +8,4 @@ results_cluster
 FunctionalIntegrator
 *.png
 .old_queue
+data_processing.nb
