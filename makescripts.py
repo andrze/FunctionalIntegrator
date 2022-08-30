@@ -22,34 +22,30 @@ if len(argv) == 2 and argv[1] in modes:
 else:
     raise ValueError("Unrecognised or missing calculation mode")
 
-# dimensions = [1.5,1.7,1.8,1.9,2.,2.1,2.5,3.]
-# ns = [1., 1.2, 1.4, 1.6, 1.8, 2.]
-# options = [[{'-kappa': 1.5}],
-#            [{'-u': 0.075}],
-#            [{'-dim': 2}],
-#            [{'-rhomax': 2.}],
-#            [{'-delta': 2e-5}],
+# options = [[{'-kappa': .2}],
+#            [{'-u': .5}],
+#            [{'-dim': 3}],
+#            [{'-rhomax': 12.}],
+#            [{'-delta': 1e-5}],
 #            [{'-precision': 1e-6}],
-#            [{'-num_points': 150}],
+#            [{'-num_points': 200}],
 #            [{'-norm': 5}],
-#            [{'-a': 2}],
-#            [{'-N': n} for n in ns],
+#            [{'-a': i * .1}  for i in range(10, 31)],
+#            [{'-N': 2}],
 #            [{'-sigma_normalization': 'false'}]]
+#
 
-
-options = [[{'-kappa': i * 0.1} for i in range(5, 20)],
+options = [[{'-kappa': .92 + i * 0.02} for i in range(0, 4)],
            [{'-u': 0.075}],
            [{'-dim': 2}],
-           [{'-rhomax': 2.}],
+           [{'-rhomax': 1.2}],
            [{'-delta': 1e-5}],
            [{'-precision': 1e-6}],
-           [{'-num_points': 150}],
-           [{'-norm': 5}],
-           [{'-a': a} for a in [1., 2., 3.]],
+           [{'-num_points': 120}],
+           [{'-norm_point': 5}],
+           [{'-a': i * .1}  for i in range(14, 26)],
            [{'-N': 2}],
            [{'-sigma_normalization': 'false'}]]
-           # [{'-d': 2.}, {'-d': 2.05}, {'-d': 2.07}, {'-d': 2.1}, {'-d': 2.2},
-           #  {'-d': 2.3}, {'-d': 2.5}, {'-d': 2.75}, {'-d': 2.9}, {'-d': 3}]]
 
 all_configurations = options[0]
 for single_option in options[1:]:
@@ -83,8 +79,8 @@ if mode == "single":
         file.write("./FunctionalIntegrator %s\n" % opt_string)
         file.close()
         
-        time = 120
-        command = 'qsub -l mem=1000mb,walltime=%i:00:00 %s/scripts/%s' % (time, project_dir, filename)
+        time = 60
+        command = 'qsub -l mem=100mb,walltime=%i:00:00 %s/scripts/%s' % (time, project_dir, filename)
         print command
         system(command)
 
@@ -105,7 +101,7 @@ if mode == "critical":
         file.close()
     
         time = 120
-        command = 'qsub -l mem=1000mb,walltime=%i:00:00 %s/scripts/%s' % (time, project_dir, filename)
+        command = 'qsub -l mem=100mb,walltime=%i:00:00 %s/scripts/%s' % (time, project_dir, filename)
         print command
         system(command)
 
