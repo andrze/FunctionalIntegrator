@@ -20,7 +20,7 @@ System::System() {
 System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n,
 	bool sigma_normalization) :
 	integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization), num_points(
-		V.num_points), step(V.step_size) {
+		V.num_points), step_size(V.step_size) {
 	parameters.push_back(V);
 	parameters.push_back(StepFunction(V.step_size, V.num_points, [](PhysicalDouble) {
 		return 1;
@@ -67,7 +67,7 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, P
 	reparametrize();
 
 	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
-	step = this->kappa * rho0_to_rhomax / num_points;
+	step_size = this->kappa * rho0_to_rhomax / num_points;
 
 }
 
@@ -497,11 +497,11 @@ System System::time_derivative() {
 	}
 
 	StepFunction v_der = (2 - eta) * V() - (d - 2 + eta) * rho_func * V2
-		- vd * StepFunction(step, v_vals, V().domain_begin);
+		- vd * StepFunction(step_size, v_vals, V().domain_begin);
 	StepFunction zs_der = -eta * Zs() - (d - 2 + eta) * rho_func * Zs1
-		- vd * StepFunction(step, zs_vals, V().domain_begin);
+		- vd * StepFunction(step_size, zs_vals, V().domain_begin);
 	StepFunction zp_der = -eta * Zp() - (d - 2 + eta) * rho_func * Zp1
-		- vd * StepFunction(step, zp_vals, V().domain_begin);
+		- vd * StepFunction(step_size, zp_vals, V().domain_begin);
 
 	System derivative = *this;
 	derivative.parameters = std::vector<StepFunction>();

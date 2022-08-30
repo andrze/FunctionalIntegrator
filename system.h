@@ -39,6 +39,7 @@ public:
 	PhysicalDouble kappa = 1.;
 	PhysicalDouble u = 0.1;
 	PhysicalDouble a = 2.;
+	PhysicalDouble step_size = 0;
 
 	PhysicalDouble z_correction = 1.;
 	bool zoomed = false;
