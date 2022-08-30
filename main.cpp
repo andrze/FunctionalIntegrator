@@ -25,22 +25,26 @@ int main(int argc, char *argv[]) {
 
 	std::string outfile = "outfile.csv";
 	size_t num_threads = 1;
-	for (size_t i = 0; i < arg.size() - 1; i++) {
+	bool verbose = false;
+	for (size_t i = 0; i < arg.size(); i++) {
 		std::string opt = arg[i];
-		if (opt == "-out") {
+		if (opt == "-out" && i < arg.size() - 1) {
 			outfile = arg[i + 1];
-		} else if (opt == "-threads") {
+		} else if (opt == "-threads" && i < arg.size() - 1) {
 			num_threads = size_t(std::atoi(arg[i + 1].c_str()));
+		} else if (opt == "verbose") {
+			verbose = true;
 		}
+
 	}
-	std::cout << "Running calculations on "<< num_threads << " threads.\n";
+	std::cout << "Running calculations on " << num_threads << " threads.\n";
 
 	Integrator integrator(arg, num_threads);
 
 	std::string task = std::string(argv[1]); // First command line argument reserved for task specification
 	if (task == "single") {
 		std::cout << integrator.system.print_configuration();
-		integrator.integrate();
+		integrator.integrate(verbose);
 	} else if (task == "critical") {
 		integrator.find_criticality();
 	} else {
@@ -52,7 +56,7 @@ int main(int argc, char *argv[]) {
 
 	auto end = std::chrono::steady_clock::now();
 	std::cout << "Calculations lasted for " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
-			<< " seconds.\n";
+		<< " seconds.\n";
 
 	return 0;
 }

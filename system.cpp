@@ -18,8 +18,8 @@ System::System() {
 }
 
 System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n,
-		bool sigma_normalization) :
-		integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization) {
+	bool sigma_normalization) :
+	integrator(integrator), delta_t(delta_t), d(d), n(n), sigma_normalization(sigma_normalization) {
 	parameters.push_back(V);
 	parameters.push_back(StepFunction(V.step_size, V.num_points, [](PhysicalDouble) {
 		return 1;
@@ -31,7 +31,7 @@ System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, P
 }
 
 System::System(Integrator *integrator, std::vector<std::string> configuration, PhysicalDouble kappa) :
-		integrator(integrator) {
+	integrator(integrator) {
 
 	for (size_t i = 0; i < configuration.size() - 1; i++) {
 		std::string opt = configuration[i], val = configuration[i + 1];
@@ -53,6 +53,8 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, P
 			a = std::strtod(val.c_str(), nullptr);
 		} else if (opt == "-sigma_normalization") {
 			sigma_normalization = (val == "true");
+		} else if (opt == "-norm_point") {
+			norm_point = size_t(std::atoi(val.c_str()));
 		}
 	}
 
@@ -104,22 +106,48 @@ StepFunction& System::Zp() {
 	return parameters[2];
 }
 
+void System::precalculate_rho_derivatives() {
+
+	V2 = V().derivative(1);
+	V3 = V().derivative(2);
+	Zs1 = Zs().derivative(1);
+	Zs2 = Zs().derivative(2);
+	Zp1 = Zp().derivative(1);
+	Zp2 = Zp().derivative(2);
+
+	rho_func = V().x_func();
+	d_inv = 1.l / d;
+}
+
+RealVector System::full_vector_representation() {
+	std::vector<PhysicalDouble> params;
+	params.insert(params.end(), V().begin(), V().end());
+	params.insert(params.end(), Zs().begin(), Zs().end());
+	params.insert(params.end(), Zp().begin() + 1, Zp().end());
+
+	return RealVector(params);
+}
+
 void System::find_eta() {
-	PhysicalDouble potential_minimum = V().kappa_u().first;
+	return find_eta_norm_point();
+}
+
+void System::find_eta_minimum() {
+	PhysicalDouble potential_minimum = V().kappa_u(V2).first;
 	if (potential_minimum <= std::numeric_limits<PhysicalDouble>::epsilon()) {
 		throw std::runtime_error("Potential minimum is out of the grid");
 	}
 	size_t norm = size_t((potential_minimum - V().domain_begin) / V().step_size);
 
 	PhysicalDouble v1 = V()(potential_minimum);
-	PhysicalDouble v2 = V().derivative(1)(potential_minimum);
-	PhysicalDouble v3 = V().derivative(2)(potential_minimum);
+	PhysicalDouble v2 = V2(potential_minimum);
+	PhysicalDouble v3 = V3(potential_minimum);
 	PhysicalDouble zs = Zs()(potential_minimum);
-	PhysicalDouble zs1 = Zs().derivative(1)(potential_minimum);
-	PhysicalDouble zs2 = Zs().derivative(2)(potential_minimum);
+	PhysicalDouble zs1 = Zs1(potential_minimum);
+	PhysicalDouble zs2 = Zs2(potential_minimum);
 	PhysicalDouble zp = Zp()(potential_minimum);
-	PhysicalDouble zp1 = Zp().derivative(1)(potential_minimum);
-	PhysicalDouble zp2 = Zp().derivative(2)(potential_minimum);
+	PhysicalDouble zp1 = Zp1(potential_minimum);
+	PhysicalDouble zp2 = Zp2(potential_minimum);
 	PhysicalDouble rho = potential_minimum, rho_inv = 1 / rho;
 
 	PhysicalDouble d_inv = 1 / d;
@@ -137,7 +165,7 @@ void System::find_eta() {
 		PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 		PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
 		PhysicalDouble res = -2 * pow2(gp) * (-1 + n) * (v2 + y2 * zp1)
-				- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
+			- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
 		return res;
 	};
 
@@ -166,17 +194,17 @@ void System::find_eta() {
 			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
 
 			return 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
-					- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
-					+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
-					- 2 * gs2 * (zs1 + 2 * rho * zs2)
-					+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
-					- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-							* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
-					- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1)
-							* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) * d_inv
-					- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
-							* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-									+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
+				- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
+				+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
+				- 2 * gs2 * (zs1 + 2 * rho * zs2)
+				+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
+				- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
+					* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
+				- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1) * (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y))
+					* d_inv
+				- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
+					* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
+						+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
 		} else {
 			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
@@ -185,23 +213,19 @@ void System::find_eta() {
 			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs;
 
 			return (2
-					* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
-							- 2 * gp2 * gs
-									* (-2 * y2 * pow2(zp + rho * zp1 - zs)
-											+ d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
-							+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
-							- gs2
-									* (d * rho * (zp1 + 2 * rho * zp2)
-											- 4 * gp * rho * zp1
-													* (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
-											+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
-													* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
-											+ gp2
-													* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
-															+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs)
-																	* (-(rho * zp1) + zs + rpy)
-															+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y))))
-					* d_inv * rho_inv;
+				* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
+					- 2 * gp2 * gs
+						* (-2 * y2 * pow2(zp + rho * zp1 - zs) + d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
+					+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
+					- gs2
+						* (d * rho * (zp1 + 2 * rho * zp2)
+							- 4 * gp * rho * zp1 * (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
+							+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
+								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
+							+ gp2
+								* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
+									+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs) * (-(rho * zp1) + zs + rpy)
+									+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y)))) * d_inv * rho_inv;
 		}
 
 	};
@@ -232,27 +256,129 @@ void System::find_eta() {
 
 	PhysicalDouble free_component, eta_component;
 
-	free_component = vd * (z_free * v2 - v_free * z1);
-	eta_component = -v2 * z + vd * (v_eta * z1 - z_eta * v2);
+	free_component = 2 * v1 * z1 + vd * (z_free * v2 - v_free * z1);
+	eta_component = z1 * v1 - v2 * z + vd * (-v_eta * z1 + z_eta * v2);
 
 	eta = free_component / eta_component;
 }
 
-System System::time_derivative() {
-	find_eta();
-	StepFunction V = this->V();
-	StepFunction V2 = V.derivative(1);
-	StepFunction V3 = V.derivative(2);
-	StepFunction Zs = this->Zs();
-	StepFunction Zs1 = Zs.derivative(1);
-	StepFunction Zs2 = Zs.derivative(2);
-	StepFunction Zp = this->Zp();
-	StepFunction Zp1 = Zp.derivative(1);
-	StepFunction Zp2 = Zp.derivative(2);
+void System::find_eta_norm_point() {
 
-	size_t num_points = V.num_points;
-	PhysicalDouble step = V.step_size;
-	StepFunction rho_func = V.x_func();
+	PhysicalDouble v1 = V()[norm_point];
+	PhysicalDouble v2 = V2[norm_point];
+	PhysicalDouble v3 = V3[norm_point];
+	PhysicalDouble zs = Zs()[norm_point];
+	PhysicalDouble zs1 = Zs1[norm_point];
+	PhysicalDouble zs2 = Zs2[norm_point];
+	PhysicalDouble zp = Zp()[norm_point];
+	PhysicalDouble zp1 = Zp1[norm_point];
+	PhysicalDouble zp2 = Zp2[norm_point];
+	PhysicalDouble rho = rho_func[norm_point], rho_inv = 1 / rho;
+
+	PhysicalDouble d_inv = 1 / d;
+
+	PhysicalDouble z, z1;
+	if (sigma_normalization) {
+		z = zs;
+		z1 = zs1;
+	} else {
+		z = zp;
+		z1 = zp1;
+	}
+
+	auto z_common_part = [=](std::array<PhysicalDouble, 6> args) {
+		PhysicalDouble y2 = args[0], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4];
+		if (norm_point == 0) {
+			PhysicalDouble g = 1 / (v1 + y2 * zp + ry);
+
+			return -2 * pow2(g) * ((-1 + n) * zp1 + zs1);
+		} else if (sigma_normalization) {
+
+			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
+			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
+
+			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp, gp4 = gp2 * gp2, gp5 = gp4 * gp;
+			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
+
+			return 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
+				- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
+				+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
+				- 2 * gs2 * (zs1 + 2 * rho * zs2)
+				+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
+				- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
+					* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
+				- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1) * (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y))
+					* d_inv
+				- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
+					* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
+						+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
+		} else {
+			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
+			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
+
+			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
+			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs;
+
+			return (2
+				* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
+					- 2 * gp2 * gs
+						* (-2 * y2 * pow2(zp + rho * zp1 - zs) + d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
+					+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
+					- gs2
+						* (d * rho * (zp1 + 2 * rho * zp2)
+							- 4 * gp * rho * zp1 * (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
+							+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
+								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
+							+ gp2
+								* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
+									+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs) * (-(rho * zp1) + zs + rpy)
+									+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y)))) * d_inv * rho_inv;
+		}
+
+	};
+
+	auto z_free_integrand = [=](std::array<PhysicalDouble, 6> args) {
+		PhysicalDouble yd = args[1], prefactor = a * args[5];
+		return prefactor * z_common_part(args) * yd;
+	};
+
+	auto z_eta_integrand = [=](std::array<PhysicalDouble, 6> args) {
+		PhysicalDouble yd = args[1], ry = a * args[2];
+		return ry * z_common_part(args) * yd;
+	};
+
+	integrator->reset_integrals(2);
+
+	integrator->push_integrand_function(z_free_integrand);
+	integrator->push_integrand_function(z_eta_integrand);
+
+	auto results = integrator->evaluate_integrals();
+
+	PhysicalDouble z_free = (*results)[0];
+	PhysicalDouble z_eta = (*results)[1];
+
+	PhysicalDouble free_component = (d - 2) * rho * z1 + vd * z_free;
+	PhysicalDouble eta_component = z + rho * z1 - vd * z_eta;
+
+	eta = -free_component / eta_component;
+}
+
+System System::time_derivative() {
+	precalculate_rho_derivatives();
+	find_eta();
+//	StepFunction V = this->V();
+//	StepFunction V2 = V.derivative(1);
+//	StepFunction V3 = V.derivative(2);
+//	StepFunction Zs = this->Zs();
+//	StepFunction Zs1 = Zs.derivative(1);
+//	StepFunction Zs2 = Zs.derivative(2);
+//	StepFunction Zp = this->Zp();
+//	StepFunction Zp1 = Zp.derivative(1);
+//	StepFunction Zp2 = Zp.derivative(2);
+
+	size_t num_points = V().num_points;
+	PhysicalDouble step = V().step_size;
+//	StepFunction rho_func = V.x_func();
 
 	integrator->reset_integrals(num_points * 3);
 
@@ -260,9 +386,9 @@ System System::time_derivative() {
 
 	for (size_t i = 0; i < num_points; i++) {
 		PhysicalDouble rho = rho_func[i], rho_inv = 1 / rho;
-		PhysicalDouble v1 = V[i], v2 = V2[i], v3 = V3[i];
-		PhysicalDouble zs = Zs[i], zs1 = Zs1[i], zs2 = Zs2[i];
-		PhysicalDouble zp = Zp[i], zp1 = Zp1[i], zp2 = Zp2[i];
+		PhysicalDouble v1 = V()[i], v2 = V2[i], v3 = V3[i];
+		PhysicalDouble zs = Zs()[i], zs1 = Zs1[i], zs2 = Zs2[i];
+		PhysicalDouble zp = Zp()[i], zp1 = Zp1[i], zp2 = Zp2[i];
 
 		bool singularity = false;
 		std::string error;
@@ -292,7 +418,7 @@ System System::time_derivative() {
 			//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 			PhysicalDouble pref = prefactor - eta * ry;
 			PhysicalDouble res = -2 * pow2(gp) * (-1 + n) * (v2 + y2 * zp1)
-					- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
+				- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
 			return yd * res * pref;
 		};
 		integrator->push_integrand_function(v_integrand);
@@ -313,7 +439,7 @@ System System::time_derivative() {
 
 			auto zs_integrand = [=](std::array<PhysicalDouble, 6> args) {
 				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4],
-						prefactor = a * args[5];
+					prefactor = a * args[5];
 				PhysicalDouble pref = prefactor - eta * ry;
 				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
@@ -322,18 +448,18 @@ System System::time_derivative() {
 				//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 
 				PhysicalDouble res = 8 * gp3 * (-1 + n)
-						* ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
-						- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
-						+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
-						- 2 * gs2 * (zs1 + 2 * rho * zs2)
-						+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
-						- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
-						- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1)
-								* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) * d_inv
-						- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
-								* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-										+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
+					* ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
+					- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
+					+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
+					- 2 * gs2 * (zs1 + 2 * rho * zs2)
+					+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
+					- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
+						* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
+					- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1)
+						* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) * d_inv
+					- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
+						* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
+							+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
 				return yd * res * pref;
 			};
 
@@ -355,7 +481,7 @@ System System::time_derivative() {
 		} else {
 			auto zp_integrand = [=](std::array<PhysicalDouble, 6> args) {
 				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4],
-						prefactor = a * args[5];
+					prefactor = a * args[5];
 				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
 				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
 				PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
@@ -363,26 +489,21 @@ System System::time_derivative() {
 				//PhysicalDouble pref = prefactor(y2, expm) - eta * ry;
 				PhysicalDouble pref = prefactor - eta * ry;
 
-				PhysicalDouble res =
-						(2
-								* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
-										- 2 * gp2 * gs
-												* (-2 * y2 * pow2(zp + rho * zp1 - zs)
-														+ d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
-										+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
-										- gs2
-												* (d * rho * (zp1 + 2 * rho * zp2)
-														- 4 * gp * rho * zp1
-																* (2 * d * rho * v2 + rho * y2 * zp1
-																		+ d * y2 * (-zp + zs))
-														+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
-																* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
-														+ gp2
-																* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
-																		+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs))
-																				* (zp - zs) * (-(rho * zp1) + zs + rpy)
-																		+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs))
-																				* rp2y)))) * d_inv * rho_inv;
+				PhysicalDouble res = (2
+					* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
+						- 2 * gp2 * gs
+							* (-2 * y2 * pow2(zp + rho * zp1 - zs) + d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
+						+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
+						- gs2
+							* (d * rho * (zp1 + 2 * rho * zp2)
+								- 4 * gp * rho * zp1 * (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
+								+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
+									* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
+								+ gp2
+									* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
+										+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs)
+											* (-(rho * zp1) + zs + rpy)
+										+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y)))) * d_inv * rho_inv;
 				return res * pref * yd;
 			};
 			integrator->push_integrand_function(zp_integrand);
@@ -397,10 +518,12 @@ System System::time_derivative() {
 		zp_vals[i] = (*integrals)[3 * i + 2];
 	}
 
-	StepFunction v_der = (2 - eta) * V - (d - 2 + eta) * rho_func * V2
-			- vd * StepFunction(step, v_vals, V.domain_begin);
-	StepFunction zs_der = -eta * Zs - (d - 2 + eta) * rho_func * Zs1 - vd * StepFunction(step, zs_vals, V.domain_begin);
-	StepFunction zp_der = -eta * Zp - (d - 2 + eta) * rho_func * Zp1 - vd * StepFunction(step, zp_vals, V.domain_begin);
+	StepFunction v_der = (2 - eta) * V() - (d - 2 + eta) * rho_func * V2
+		- vd * StepFunction(step, v_vals, V().domain_begin);
+	StepFunction zs_der = -eta * Zs() - (d - 2 + eta) * rho_func * Zs1
+		- vd * StepFunction(step, zs_vals, V().domain_begin);
+	StepFunction zp_der = -eta * Zp() - (d - 2 + eta) * rho_func * Zp1
+		- vd * StepFunction(step, zp_vals, V().domain_begin);
 
 	System derivative = *this;
 	derivative.parameters = std::vector<StepFunction>();
@@ -408,6 +531,8 @@ System System::time_derivative() {
 	derivative.parameters.push_back(zs_der);
 	derivative.parameters.push_back(zp_der);
 	derivative.eta = eta;
+
+	beta_squared = derivative.full_vector_representation().norm() / std::sqrt(parameters.size() * V().num_points);
 
 	return derivative;
 }
@@ -419,9 +544,9 @@ void System::rescale() {
 	}
 	PhysicalDouble z_norm;
 	if (sigma_normalization) {
-		z_norm = Zs()(potential_minimum);
+		z_norm = Zs()[norm_point];
 	} else {
-		z_norm = Zp()(potential_minimum);
+		z_norm = Zp()[norm_point];
 	}
 
 	for (auto &&func : this->parameters) {
@@ -431,7 +556,7 @@ void System::rescale() {
 	}
 	if (z_norm > 1.01 || z_norm < .99) {
 		std::cout << "Rescaling by a factor of " << z_norm << ", old potential minimum at " << potential_minimum
-				<< '\n';
+			<< '\n';
 	}
 
 	z_dim *= z_norm;
@@ -439,11 +564,11 @@ void System::rescale() {
 }
 
 void System::zoom_in() {
-	auto v_vals = V().vals, xs = V().xs();
-	const PhysicalDouble V_LOWER_THRESHOLD = -a + .1;
-	const PhysicalDouble V_UPPER_THRESHOLD = 2e+4;
-	const PhysicalDouble V_LOWER_GOAL = -a + .15;
-	const PhysicalDouble V_UPPER_GOAL = 1e+4;
+	std::vector<PhysicalDouble> v_vals(V().begin(), V().end()), xs = V().xs();
+	const PhysicalDouble V_LOWER_THRESHOLD = -a;
+	const PhysicalDouble V_UPPER_THRESHOLD = 2e+6;
+	const PhysicalDouble V_LOWER_GOAL = -a;
+	const PhysicalDouble V_UPPER_GOAL = 2e+6;
 
 	if (v_vals[0] > V_LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals[v_vals.size() - 1] < V_UPPER_THRESHOLD) {
 		return;
@@ -475,29 +600,29 @@ void System::zoom_in() {
 }
 
 void System::cut_domain() {
-	auto v_vals = V().vals, xs = V().xs();
-	const double LOWER_THRESHOLD = -a + .05;
-	const double UPPER_THRESHOLD = 2e+4;
+	std::vector<PhysicalDouble> v_vals(V().begin(), V().end()), xs = V().xs();
+	const double LOWER_THRESHOLD = -a * 2;
+	const double UPPER_THRESHOLD = 1e+4;
 
 	if (v_vals[0] > LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals.back() < UPPER_THRESHOLD) {
 		return;
 	}
 
-	size_t rescale_begin = 0, rescale_end = xs.size() - 1;
+	size_t rescale_begin = 0, rescale_end = v_vals.size();
 
-	for (size_t i = 1; i < v_vals.size(); i++) {
-		if (v_vals[i] > LOWER_THRESHOLD && v_vals[i] > v_vals[i - 1]) {
-			rescale_begin = i;
-			break;
+	if (v_vals[0] < LOWER_THRESHOLD) {
+		for (size_t i = 1; i < v_vals.size(); i++) {
+			if (v_vals[i] > LOWER_THRESHOLD && v_vals[i] > v_vals[i - 1]) {
+				rescale_begin = i;
+				break;
+			}
 		}
 	}
 
-	if (v_vals.back() < UPPER_THRESHOLD) {
-		rescale_end = v_vals.size();
-	} else {
+	if (v_vals.back() > UPPER_THRESHOLD) {
 		for (size_t i = rescale_begin + 1; i < v_vals.size(); i++) {
 			if (v_vals[i] > UPPER_THRESHOLD) {
-				rescale_end = i;
+				rescale_end = i-1;
 				break;
 			}
 		}
@@ -506,24 +631,26 @@ void System::cut_domain() {
 	for (auto &&func : this->parameters) {
 		func = func.cut_domain(rescale_begin, rescale_end);
 	}
-	std::cout << "Zooming in on the interval [" << xs[rescale_begin] << ',' << xs[rescale_end - 1] << "].\n";
+	std::cout << "Zooming in on the interval [" << xs[rescale_begin] << ',' << xs[rescale_end] << "].\n";
 	zoomed = true;
 }
 
 PhysicalDouble System::last_val() {
-	return V().vals.back();
+	return *std::next(V().end(), -1);
 }
 
 PhysicalDouble System::first_val() {
-	return V().vals.front();
+	return *V().begin();
 }
 
 int System::find_phase() {
 	phase = 0;
-	auto mini_maxi = V().minmax();
-	if (mini_maxi.first > 0) { // Disordered phase
+//	auto mini_maxi = V().minmax();
+	PhysicalDouble v_at_point_1 = V()[1];
+	PhysicalDouble v_at_point_m1 = V()[V().num_points - 2];
+	if (v_at_point_1 > 0) { // Disordered phase
 		phase = -1;
-	} else if (last_val() < 0) { // Ordered phase
+	} else if (v_at_point_m1 < 0) { // Ordered phase
 		phase = 1;
 	}
 	return phase;
@@ -538,14 +665,15 @@ std::string System::print_phase(int phase) {
 		}
 	}
 
-	std::string message = "Zakończono w fazie ";
+	std::string message = "Flow ended in the ";
 	if (phase == 1) {
-		message += "uporządkowanej.\n";
+		message += "ordered";
 	} else if (phase == -1) {
-		message += "nieuporządkowanej.\n";
+		message += "disordered";
 	} else {
-		message += "nieokreślonej.\n";
+		message += "unidentified";
 	}
+	message += " phase.\n";
 
 	return message;
 }
@@ -566,6 +694,7 @@ std::string System::print_configuration() {
 	configuration << "-num_points," << num_points << ',';
 	configuration << "-a," << a << ',';
 	configuration << "-sigma_normalization," << sigma_normalization << ',';
+	configuration << "-norm_point," << norm_point << ',';
 	/*if (precision < 0) {
 	 configuration << "-prec," << precision << ',';
 	 }*/
@@ -590,42 +719,6 @@ System& System::operator*=(PhysicalDouble rhs) {
 		parameters[i] = parameters[i] * rhs;
 	}
 	return *this;
-}
-
-PhysicalDouble System::r(PhysicalDouble y2) {
-	return a / 2 * R(y2);
-}
-
-PhysicalDouble System::r(PhysicalDouble y2, PhysicalDouble expm) {
-	return a / 2 * R(y2, expm);
-}
-
-PhysicalDouble System::rp(PhysicalDouble y2) {
-	return a / 2 * Rp(y2);
-}
-
-PhysicalDouble System::rp(PhysicalDouble y2, PhysicalDouble expm) {
-	return a / 2 * Rp(y2, expm);
-}
-
-PhysicalDouble System::rp2(PhysicalDouble y2) {
-	return a / 2 * Rp2(y2);
-}
-
-PhysicalDouble System::rp2(PhysicalDouble y2, PhysicalDouble expm) {
-	return a / 2 * Rp2(y2, expm);
-}
-
-PhysicalDouble System::prefactor(PhysicalDouble y2) {
-	return a / 2 * Prefactor(y2);
-}
-
-PhysicalDouble System::prefactor(PhysicalDouble y2, PhysicalDouble expm) {
-	return a / 2 * Prefactor(y2, expm);
-}
-
-PhysicalDouble System::G(PhysicalDouble m, PhysicalDouble Z, PhysicalDouble y) {
-	return 1 / (m + Z * y + r(y));
 }
 
 PhysicalDouble System::gauss_legendre_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f) {

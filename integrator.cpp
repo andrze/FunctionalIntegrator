@@ -67,6 +67,26 @@ Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
 	GLIntegrator = GaussQuadrature(system.d);
 }
 
+//Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
+//	system_configuration(arg), num_threads(num_threads) {
+//	if (num_threads <= 0) {
+//		throw std::runtime_error("Number of threads should be larger than 0.");
+//	}
+//
+//	system = System(this, arg);
+//
+//	for (size_t i = 0; i < arg.size() - 1; i++) {
+//		std::string opt = arg[i];
+//		if (opt == "-kappa_min") {
+//			kappa_min = std::strtod(arg[i + 1].c_str(), nullptr);
+//		} else if (opt == "-precision") {
+//			precision = std::strtod(arg[i + 1].c_str(), nullptr);
+//		}
+//	}
+//
+//	GLIntegrator = GaussQuadrature(system.d);
+//}
+
 Integrator::~Integrator() {
 	Task task(this, nullptr, nullptr);
 	task.shutdown = true;
@@ -86,16 +106,24 @@ void Integrator::restart_system(PhysicalDouble kappa) {
 	system = System(this, system_configuration, kappa);
 }
 
-int Integrator::integrate() {
-	size_t max_steps = 10e+7;
-	PhysicalDouble max_time = 100;
+int Integrator::integrate(bool verbose) {
+	size_t max_steps = 1e+7;
+	PhysicalDouble max_time = 15;
+	system.time_derivative();
 	snapshots.push_back(system);
 	TerminalPlot plot;
+//	PhysicalDouble base_delta_t = system.delta_t;
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
+		if (i % 1000 == 0) {
+			std::cout << std::setprecision(5) << system.time << ", " << system.eta << '\n';
+			if (verbose) {
+				plot.plot(system.parameters);
+			}
+		}
 		try {
 			runge_kutta_method.runge_kutta_step(system);
-			system.cut_domain();
+//			system.cut_domain();
 			//system.zoom_in();
 			//system.rescale();
 
@@ -116,14 +144,23 @@ int Integrator::integrate() {
 			}
 		}
 
-		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.1) {
+		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.05) {
 			snapshots.push_back(system);
 		}
+//
+//		PhysicalDouble distance_from_pole = system.a + system.V()[0];
+//		PhysicalDouble new_delta = base_delta_t * std::pow(10, int(std::log10(distance_from_pole)));
+//		if(std::abs(new_delta - system.delta_t) > 1e-15){
+//			if(new_delta < 1e-9){
+//				break;
+//			}
+//			std::cout << std::setprecision(16);
+//			std::cout << system.V()<<'\n';
+//			std::cout << distance_from_pole << ' ' << int(-std::log10(distance_from_pole)) << ' ' << std::pow(10, 1+int(-std::log10(distance_from_pole))) <<  '\n';
+//			std::cout << "Changing delta_t to " << new_delta << '\n';
+//			system.delta_t = new_delta;
+//		}
 
-		if (system.step % 500 == 0) {
-			std::cout << std::setprecision(5) << system.time << ", " << system.eta << '\n';
-			plot.plot(system.parameters);
-		}
 	}
 	std::cout << '\n';
 	std::cout << "Przekroczono maksymalną liczbę kroków.\n";
@@ -137,6 +174,7 @@ void Integrator::find_criticality() {
 
 	for (size_t i = 0; i < max_iter && kappa_max - kappa_min > precision; i++) {
 		restart_system((kappa_min + kappa_max) / 2);
+		std::cout << std::setprecision(-int(std::log10(precision))+2);
 		std::cout << "Kappa = " << system.kappa << '\n';
 		int phase = integrate();
 		if (phase == 1) {
@@ -176,10 +214,10 @@ void Integrator::save_snapshots(std::string file) {
 
 	std::ofstream out(file.c_str());
 
-	out << "t,eta,Z,Z corrections\n";
+	out << "t,eta,Z,beta\n";
 	for (size_t i = 0; i < snapshots.size(); i++) {
 		System s = snapshots[i];
-		out << s.time << ',' << s.eta << ',' << s.z_dim << ',' << s.z_correction << '\n';
+		out << s.time << ',' << s.eta << ',' << s.z_dim << ',' << s.beta_squared << '\n';
 	}
 	out << "\n";
 
@@ -208,6 +246,10 @@ void Integrator::reset_integrals(size_t new_size) {
 std::vector<PhysicalDouble>* Integrator::evaluate_integrals() {
 	size_t task_count = integrand_functions.size();
 	integral_values = std::vector<PhysicalDouble>(task_count);
+//
+//	for (size_t i = 0; i < task_count; i++) {
+//		integral_values[i] = GLIntegrator.integrate(integrand_functions[i]);
+//	}
 
 	std::vector<Task> task_vector;
 	task_vector.reserve(task_count);

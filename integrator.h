@@ -49,7 +49,7 @@ public:
 	PhysicalDouble precision = 1e-4;
 
 	void restart_system(PhysicalDouble kappa = -1);
-	int integrate();
+	int integrate(bool verbose=false);
 	void find_criticality();
 	void save_snapshots(std::string file);
 

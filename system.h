@@ -12,10 +12,11 @@ class Integrator;
 class System {
 public:
 	System();
-	System(Integrator* integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n, bool sigma_normalization);
-	System(Integrator* integrator, std::vector<std::string> configuration, PhysicalDouble kappa = -1);
+	System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, PhysicalDouble d, PhysicalDouble n,
+		bool sigma_normalization);
+	System(Integrator *integrator, std::vector<std::string> configuration, PhysicalDouble kappa = -1);
 
-	Integrator* integrator=nullptr;
+	Integrator *integrator = nullptr;
 	std::vector<StepFunction> parameters;
 	int phase = 0;
 
@@ -26,11 +27,13 @@ public:
 
 	PhysicalDouble eta = 0.;
 	PhysicalDouble z_dim = 1.;
+	PhysicalDouble beta_squared = std::numeric_limits<PhysicalDouble>::max();
 
-	PhysicalDouble d = 3.;
+	PhysicalDouble d = 3., d_inv = 1. / 3;
 	PhysicalDouble vd = 1.;
 	PhysicalDouble n = 1.;
 	bool sigma_normalization = true;
+	size_t norm_point = 0;
 	size_t num_points = 60;
 	PhysicalDouble rho0_to_rhomax = 1.5;
 	PhysicalDouble kappa = 1.;
@@ -46,8 +49,13 @@ public:
 	StepFunction& V();
 	StepFunction& Zs();
 	StepFunction& Zp();
+	RealVector full_vector_representation();
+	StepFunction rho_func, V2, V3, Zs1, Zs2, Zp1, Zp2;
+	void precalculate_rho_derivatives();
 
 	void find_eta();
+	void find_eta_minimum();
+	void find_eta_norm_point();
 	System time_derivative();
 
 	void rescale();
@@ -65,18 +73,8 @@ public:
 	System& operator+=(System rhs);
 	System& operator*=(PhysicalDouble rhs);
 
-	PhysicalDouble r(PhysicalDouble y);
-	PhysicalDouble r(PhysicalDouble y, PhysicalDouble expm);
-	PhysicalDouble rp(PhysicalDouble y);
-	PhysicalDouble rp(PhysicalDouble y, PhysicalDouble expm);
-	PhysicalDouble rp2(PhysicalDouble y);
-	PhysicalDouble rp2(PhysicalDouble y, PhysicalDouble expm);
-	PhysicalDouble prefactor(PhysicalDouble y);
-	PhysicalDouble prefactor(PhysicalDouble y, PhysicalDouble expm);
-	PhysicalDouble G(PhysicalDouble m, PhysicalDouble Z, PhysicalDouble y);
-
 	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble)> f);
-	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f);
+	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f);
 };
 
 System operator+(System lhs, System rhs);
