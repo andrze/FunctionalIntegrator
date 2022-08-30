@@ -9,6 +9,7 @@
 #include <limits>
 #include <iostream>
 #include <iomanip>
+#include "realvector.h"
 
 TerminalPlot::TerminalPlot() {
 
@@ -22,7 +23,7 @@ void TerminalPlot::plot(std::vector<StepFunction> functions) {
 		throw std::invalid_argument("Asked to plot more functions than supported");
 	}
 
-	double min = std::numeric_limits<double>::max(), max = -std::numeric_limits<double>::min();
+	PhysicalDouble min = std::numeric_limits<PhysicalDouble>::max(), max = -std::numeric_limits<PhysicalDouble>::min();
 
 	for (auto &&f : functions) {
 		auto minmax = f.minmax();
@@ -34,7 +35,7 @@ void TerminalPlot::plot(std::vector<StepFunction> functions) {
 	min = std::max(min, min_val);
 	max = std::min(max, max_val);
 
-	std::vector<double> x_vals = functions.front().xs();
+	std::vector<PhysicalDouble> x_vals = functions.front().xs();
 
 	double y_unit = (max - min) / height;
 	double x_start = x_vals.front();
