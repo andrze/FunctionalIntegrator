@@ -48,8 +48,7 @@ const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_COEFFICIENTS, D
 	DER1_SEMIBORDER_COEFFICIENTS, DER1_SEMISEMIBORDER_COEFFICIENTS, DER2_COEFFICIENTS, DER2_BORDER_COEFFICIENTS,
 	DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS };
 
-PhysicalDouble lagrange_polynomial(PhysicalDouble x, std::vector<PhysicalDouble> x_values,
-	std::vector<PhysicalDouble> y_values) {
+PhysicalDouble lagrange_polynomial(PhysicalDouble x, RealVector x_values, RealVector y_values) {
 	PhysicalDouble res = 0;
 
 	for (size_t i = 0; i < x_values.size(); i++) {
@@ -163,7 +162,7 @@ PhysicalDouble StepFunction::operator()(PhysicalDouble x) {
 
 	RealVector slice = interval(size_t(slice_begin), size_t(slice_begin + INTERPOLATION_ORDER));
 
-	return lagrange_polynomial(x, x_values, slice.coords);
+	return lagrange_polynomial(x, x_values, slice);
 }
 
 PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
@@ -431,7 +430,7 @@ const std::pair<PhysicalDouble, PhysicalDouble> StepFunction::kappa_u(StepFuncti
 			guess = new_guess;
 			break;
 		}
-		if(new_guess > x_lower && new_guess < x_upper){
+		if (new_guess > x_lower && new_guess < x_upper) {
 			guess = new_guess;
 		} else {
 			damping *= 2;

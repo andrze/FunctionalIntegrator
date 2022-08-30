@@ -45,6 +45,22 @@ PhysicalDouble& RealVector::operator[](size_t i) {
 	return coords[i];
 }
 
+std::vector<PhysicalDouble>::iterator RealVector::begin() {
+	return coords.begin();
+}
+
+std::vector<PhysicalDouble>::iterator RealVector::end() {
+	return coords.end();
+}
+
+PhysicalDouble RealVector::norm() {
+	PhysicalDouble norm_sq = 0;
+	for (auto &&c : coords) {
+		norm_sq += c * c;
+	}
+	return std::sqrt(norm_sq);
+}
+
 RealVector operator +(RealVector lhs, RealVector rhs) {
 	return lhs += rhs;
 }
@@ -66,12 +82,12 @@ RealVector operator /(RealVector lhs, PhysicalDouble rhs) {
 }
 
 PhysicalDouble operator *(RealVector lhs, RealVector rhs) {
-	if (lhs.coords.size() != rhs.coords.size()) {
+	if (lhs.size() != rhs.size()) {
 		throw std::invalid_argument("Received RealVectors of different dimensions");
 	}
 
 	PhysicalDouble dot_prod = 0.;
-	for (size_t i = 0; i < lhs.coords.size(); i++) {
+	for (size_t i = 0; i < lhs.size(); i++) {
 		dot_prod += lhs[i] * rhs[i];
 	}
 
@@ -79,18 +95,18 @@ PhysicalDouble operator *(RealVector lhs, RealVector rhs) {
 }
 
 std::ostream& operator <<(std::ostream &out, RealVector v) {
-	for (size_t i = 0; i < v.coords.size(); i++) {
+	for (size_t i = 0; i < v.size(); i++) {
 		out << v[i] << " ";
 	}
 	return out;
 }
 
 RealVector filter(RealVector v, std::vector<bool> filter_vec) {
-	if (v.coords.size() != filter_vec.size()) {
+	if (v.size() != filter_vec.size()) {
 		throw std::invalid_argument("Point and filter have different dimensions");
 	}
 
-	for (size_t i = 0; i < v.coords.size(); i++) {
+	for (size_t i = 0; i < v.size(); i++) {
 		if (!filter_vec[i]) {
 			v[i] = 0.;
 		}

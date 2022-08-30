@@ -6,15 +6,14 @@
 #include <ostream>
 #include <functional>
 
-typedef double PhysicalDouble;
-//typedef long double PhysicalDouble;
+//typedef double PhysicalDouble;
+typedef long double PhysicalDouble;
 
 class RealVector {
 public:
 	RealVector();
 	RealVector(std::vector<PhysicalDouble> coords);
 
-	std::vector<PhysicalDouble> coords;
 
 	size_t size();
 	RealVector& operator +=(RealVector rhs);
@@ -22,6 +21,10 @@ public:
 	RealVector& operator -=(RealVector rhs);
 	RealVector& operator /=(PhysicalDouble rhs);
 	PhysicalDouble& operator [](size_t i);
+	std::vector<PhysicalDouble>::iterator begin(), end();
+	PhysicalDouble norm();
+private:
+	std::vector<PhysicalDouble> coords;
 };
 
 RealVector operator +(RealVector lhs, RealVector rhs);
