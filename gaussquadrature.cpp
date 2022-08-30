@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cmath>
+#include <limits>
 
 IntegralConfiguration::IntegralConfiguration(PhysicalDouble start, PhysicalDouble end, size_t n) :
 	start(start), end(end), n(n) {
@@ -584,7 +585,7 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 		0.0104982845311528136147422l, 0.0104982845311528136147422l, 0.0045212770985331912584717l,
 		0.0045212770985331912584717l };
 
-	if (d == 2) {
+	if (std::abs(d-2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 		configurations = { { 0, .05l, 40 }, { 0.05l, .3l, 30 }, { .3l, 1, 40 }, { 1, 3, 20 }, { 3, 15, 20 } };
 	} else {
 		configurations = { { 0, 0.1, 40 }, { 0.1, 3., 40 }, { 3., 7., 20 } };
@@ -597,7 +598,7 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 				+ (config.end - config.start) * roots[config.n][k] / 2;
 			PhysicalDouble y2;
 			std::array<PhysicalDouble, 6> eval_point;
-			if (d == 2) {
+			if (std::abs(d-2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 				y2 = point;
 				eval_point = { y2, 1.l / 2, R(y2) / 2, Rp(y2) / 2, Rp2(y2) / 2, Prefactor(y2) / 2 };
 			} else {
