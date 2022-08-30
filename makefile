@@ -17,9 +17,9 @@ profile: CXXFLAGS += -O3 -g3 -pthread
 profile: CFLAGS += -O3 -g3 -pthread
 profile: executable
 
-#static: CXXFLAGS += -static -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -O3
-#static: CFLAGS += -static -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -O3
-#static: executable
+static: CXXFLAGS += -static  -O3
+static: CFLAGS += -static  -O3
+static: executable
 
 DEPS = system.h \
 	   stepfunction.h \
@@ -53,7 +53,6 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 #$(ODIR)/%.o: %.c $(DEPS)
 #	@echo $(DEPS)
 #	$(CXX) -c -o $@ $< $(CFLAGS)
-
 
 $(ODIR)/%.o: %.cpp $(DEPS)
 	$(CXX) -c -o $@ $< $(CFLAGS)
