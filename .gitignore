@@ -2,7 +2,9 @@ Release
 Debug
 obj
 results
+results_mysz
+results_cluster
 *.csv
 FunctionalIntegrator
 *.png
-
+.old_queue
