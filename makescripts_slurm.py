@@ -125,7 +125,7 @@ def submit_jobs():
         file.write("#SBATCH --partition=normal \n")
         file.write("#SBATCH --qos=normal \n")
         file.write("#SBATCH --mail-type=ALL \n")
-        file.write("#SBATCH --mail-user=achlebicki@fing.edu.uy \n\n\n")
+        #file.write("#SBATCH --mail-user=achlebicki@fing.edu.uy \n\n\n")
         file.write("source /etc/profile.d/modules.sh \n\n\n")
         file.write("echo Number of nodes: $SLURM_JOB_NUM_NODES \n")
         file.write("echo Node list: $SLURM_NODELIST \n")
