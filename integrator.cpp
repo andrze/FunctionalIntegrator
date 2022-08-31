@@ -109,7 +109,7 @@ void Integrator::restart_system(PhysicalDouble kappa) {
 
 int Integrator::integrate(bool verbose) {
 	size_t max_steps = 1e+7;
-	PhysicalDouble max_time = 15;
+	PhysicalDouble max_time = 50;
 	system.time_derivative();
 	snapshots.push_back(system);
 	TerminalPlot plot;

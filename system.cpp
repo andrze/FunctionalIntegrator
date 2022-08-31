@@ -64,25 +64,24 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, P
 		this->kappa = kappa;
 	}
 
-	reparametrize();
-
-	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 	step_size = this->kappa * rho0_to_rhomax / num_points;
+	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 
+	reparametrize();
 }
 
 void System::reparametrize() {
 
-	StepFunction V(step, num_points, [&](PhysicalDouble x) {
+	StepFunction V(step_size, num_points, [&](PhysicalDouble x) {
 		return u * (x - kappa);
 	});
 
 	parameters.clear();
 	parameters.push_back(V);
-	parameters.push_back(StepFunction(V.step_size, V.num_points, [=](PhysicalDouble) {
+	parameters.push_back(StepFunction(step_size, num_points, [=](PhysicalDouble) {
 		return 1;
 	}));
-	parameters.push_back(StepFunction(V.step_size, V.num_points, [=](PhysicalDouble) {
+	parameters.push_back(StepFunction(step_size, num_points, [=](PhysicalDouble) {
 		return 1;
 	}));
 }
