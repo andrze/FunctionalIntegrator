@@ -7,16 +7,6 @@
 #include "realvector.h"
 #include "numericalmethods.h"
 
-//const std::vector<PhysicalDouble> DER1_COEFFICIENTS { 1.l / 12, -2.l / 3, 0, 2.l / 3, -1.l / 12 }; // 5 point first derivative
-//const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS { -25.l / 12, 4.l, -3.l, 4.l / 3, -1.l / 4 }; // 5 point first derivative
-//const std::vector<PhysicalDouble> DER1_SEMIBORDER_COEFFICIENTS { -1.l / 4, -5.l / 6, 3.l / 2, -1.l / 2, 1.l / 12 }; // 5 point first derivative
-
-//const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS { -(137.l / 60), 5.l, -5.l, 10.l / 3, -(5.l / 4), 1.l / 5 }; // 6 point first derivative
-//const std::vector<PhysicalDouble> DER1_SEMIBORDER_COEFFICIENTS { -(1.l / 5), -(13.l / 12), 2.l, -1.l, 1.l / 3, -(1.l
-//	/ 20) }; // 6 point first derivative
-//const std::vector<PhysicalDouble> DER1_SEMISEMIBORDER_COEFFICIENTS = { 1.l / 20, -(1.l / 2), -(1.l / 3), 1.l,
-//	-(1.l / 4), 1.l / 30 }; // 6 point first derivative
-
 const std::vector<PhysicalDouble> DER1_COEFFICIENTS { -(1.l / 60), 3.l / 20, -(3.l / 4), 0, 3.l / 4, -(3.l / 20), 1.l
 	/ 60 }; // 7 point first derivative
 const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS { -(49.l / 20), 6.l, -(15.l / 2), 20.l / 3, -(15.l / 4), 6.l
@@ -25,16 +15,6 @@ const std::vector<PhysicalDouble> DER1_SEMIBORDER_COEFFICIENTS { -(1.l / 6), -(7
 	-(1.l / 4), 1.l / 30 }; // 7 point first derivative
 const std::vector<PhysicalDouble> DER1_SEMISEMIBORDER_COEFFICIENTS = { 1.l / 30, -(2.l / 5), -(7.l / 12), 4.l / 3, -(1.l
 	/ 2), 2.l / 15, -(1.l / 60) }; // 7 point first derivative
-
-//const std::vector<PhysicalDouble> DER2_COEFFICIENTS = { -1.l / 12, 4.l / 3, -5.l / 2, 4.l / 3, -1.l / 12 }; // 5/6 point second derivative
-//const std::vector<PhysicalDouble> DER2_BORDER_COEFFICIENTS = { 15.l / 4, -77.l / 6, 107.l / 6, -13.l, 61.l / 12, -5.l/ 6 }; // 6 point second derivative
-//const std::vector<PhysicalDouble> DER2_SEMIBORDER_COEFFICIENTS = { 5.l / 6, -5.l / 4, -1.l / 3, 7.l / 6, -1.l / 2, 1.l/ 12 }; // 6 point second derivative
-//const std::vector<PhysicalDouble> DER2_SEMISEMIBORDER_COEFFICIENTS = {5.l/6, -(5.l/4), -(1.l/3), 7.l/6, -(1.l/2), 1.l/12}; // 6 point second derivative
-
-//const std::vector<PhysicalDouble> DER2_COEFFICIENTS = { -1.l / 12, 4.l / 3, -5.l / 2, 4.l / 3, -1.l / 12 }; // 5 point second derivative
-//const std::vector<PhysicalDouble> DER2_BORDER_COEFFICIENTS = { 35.l / 12, -26.l / 3, 19.l / 2, -14.l / 3, 11.l / 12 }; // 5 point second derivative
-//const std::vector<PhysicalDouble> DER2_SEMIBORDER_COEFFICIENTS = { 11.l / 12, -5.l / 3, 1.l / 2, 1.l / 3, -1.l / 12 }; // 5 point second derivative
-//const std::vector<PhysicalDouble> DER2_SEMISEMIBORDER_COEFFICIENTS =	{ -1.l / 12, 4.l / 3, -5.l / 2, 4.l / 3, -1.l / 12 }; // 5 point second derivative
 
 const std::vector<PhysicalDouble> DER2_COEFFICIENTS = { 1.l / 90, -(3.l / 20), 3.l / 2, -(49.l / 18), 3.l / 2, -(3.l
 	/ 20), 1.l / 90 }; // 7 point second derivative
@@ -45,9 +25,29 @@ const std::vector<PhysicalDouble> DER2_SEMIBORDER_COEFFICIENTS = { 137.l / 180, 
 const std::vector<PhysicalDouble> DER2_SEMISEMIBORDER_COEFFICIENTS = { -(13.l / 180), 19.l / 15, -(7.l / 3), 10.l / 9,
 	1.l / 12, -(1.l / 15), 1.l / 90 }; // 7 point second derivative
 
+const std::vector<PhysicalDouble> DER3_COEFFICIENTS = { 1.l / 8, -1.l / 1, 13.l / 8, 0.l / 1, -13.l / 8, 1.l / 1, -1.l
+	/ 8 }; // 7 point third derivative
+const std::vector<PhysicalDouble> DER3_BORDER_COEFFICIENTS = { -49.l / 8, 29.l / 1, -461.l / 8, 62.l / 1, -307.l / 8,
+	13.l / 1, -15.l / 8 }; // 7 point third derivative
+const std::vector<PhysicalDouble> DER3_SEMIBORDER_COEFFICIENTS = { -15.l / 8, 7.l / 1, -83.l / 8, 8.l / 1, -29.l / 8,
+	1.l / 1, -1.l / 8 }; // 7 point third derivative
+const std::vector<PhysicalDouble> DER3_SEMISEMIBORDER_COEFFICIENTS = { -1.l / 8, -1.l / 1, 35.l / 8, -6.l / 1, 29.l / 8,
+	-1.l / 1, 1.l / 8 }; // 7 point third derivative
+
+const std::vector<PhysicalDouble> DER4_COEFFICIENTS = { -1.l / 6, 2.l / 1, -13.l / 2, 28.l / 3, -13.l / 2, 2.l / 1, -1.l
+	/ 6 }; // 7 point fourth derivative
+const std::vector<PhysicalDouble> DER4_BORDER_COEFFICIENTS = { 35.l / 6, -31.l / 1, 137.l / 2, -242.l / 3, 107.l / 2,
+	-19.l / 1, 17.l / 6 }; // 7 point fourth derivative
+const std::vector<PhysicalDouble> DER4_SEMIBORDER_COEFFICIENTS = { 17.l / 6, -14.l / 1, 57.l / 2, -92.l / 3, 37.l / 2,
+	-6.l / 1, 5.l / 6 }; // 7 point fourth derivative
+const std::vector<PhysicalDouble> DER4_SEMISEMIBORDER_COEFFICIENTS = { 5.l / 6, -3.l / 1, 7.l / 2, -2.l / 3, -3.l / 2,
+	1.l / 1, -1.l / 6 }; // 7 point fourth derivative
+
 const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_COEFFICIENTS, DER1_BORDER_COEFFICIENTS,
 	DER1_SEMIBORDER_COEFFICIENTS, DER1_SEMISEMIBORDER_COEFFICIENTS, DER2_COEFFICIENTS, DER2_BORDER_COEFFICIENTS,
-	DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS };
+	DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS, DER3_COEFFICIENTS, DER3_BORDER_COEFFICIENTS,
+	DER3_SEMIBORDER_COEFFICIENTS, DER3_SEMISEMIBORDER_COEFFICIENTS, DER4_COEFFICIENTS, DER4_BORDER_COEFFICIENTS,
+	DER4_SEMIBORDER_COEFFICIENTS, DER4_SEMISEMIBORDER_COEFFICIENTS };
 
 StepFunction::StepFunction() {
 	num_points_derivatives = 0;
@@ -169,8 +169,20 @@ PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
 		semiborder_coefficients = DER2_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER2_SEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step * inverse_step;
-	} else if (n > 2) {
-		throw std::invalid_argument("StepFunction: Derivatives of order larger than 2 are not implemented\n");
+	} else if (n == 3) {
+		coefficients = DER3_COEFFICIENTS;
+		border_coefficients = DER3_BORDER_COEFFICIENTS;
+		semiborder_coefficients = DER3_SEMIBORDER_COEFFICIENTS;
+		semisemiborder_coefficients = DER3_SEMISEMIBORDER_COEFFICIENTS;
+		normalization = std::pow(inverse_step, 3);
+	} else if (n == 4) {
+		coefficients = DER4_COEFFICIENTS;
+		border_coefficients = DER4_BORDER_COEFFICIENTS;
+		semiborder_coefficients = DER4_SEMIBORDER_COEFFICIENTS;
+		semisemiborder_coefficients = DER4_SEMISEMIBORDER_COEFFICIENTS;
+		normalization = std::pow(inverse_step, 4);
+	} else {
+		throw std::invalid_argument("StepFunction: Derivatives of order larger than 4 are not implemented\n");
 	}
 
 	RealVector coefs(coefficients), border_coefs(border_coefficients), semiborder_coefs(semiborder_coefficients),
@@ -235,7 +247,19 @@ StepFunction StepFunction::derivative(size_t n) {
 		semiborder_coefficients = DER2_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER2_SEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step * inverse_step;
-	} else if (n > 2) {
+	} else if (n == 3) {
+		coefficients = DER3_COEFFICIENTS;
+		border_coefficients = DER3_BORDER_COEFFICIENTS;
+		semiborder_coefficients = DER3_SEMIBORDER_COEFFICIENTS;
+		semisemiborder_coefficients = DER3_SEMISEMIBORDER_COEFFICIENTS;
+		normalization = std::pow(inverse_step, 3);
+	} else if (n == 4) {
+		coefficients = DER4_COEFFICIENTS;
+		border_coefficients = DER4_BORDER_COEFFICIENTS;
+		semiborder_coefficients = DER4_SEMIBORDER_COEFFICIENTS;
+		semisemiborder_coefficients = DER4_SEMISEMIBORDER_COEFFICIENTS;
+		normalization = std::pow(inverse_step, 4);
+	} else {
 		throw std::invalid_argument("StepFunction: Derivative of order larger than 2 are not implemented\n");
 	}
 
