@@ -30,6 +30,7 @@ options = [[{'-kappa': .88 + i * 0.0015} for i in range(1, 21)],
            [{'-precision': 1e-6}],
            [{'-norm_point': 0}],
            [{'-num_points': 160}],
+           [{'-max_time': 50}],
            [{'-a': 1.9}],
            [{'-N': 2}],
            [{'-sigma_normalization': 'false'}]]

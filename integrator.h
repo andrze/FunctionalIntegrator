@@ -47,6 +47,7 @@ public:
 
 	PhysicalDouble kappa_min = 0, kappa_max;
 	PhysicalDouble precision = 1e-4;
+	PhysicalDouble max_time = 20;
 
 	void restart_system(PhysicalDouble kappa = -1);
 	int integrate(bool verbose=false);

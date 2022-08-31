@@ -58,6 +58,8 @@ Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
 			kappa_min = std::strtod(arg[i + 1].c_str(), nullptr);
 		} else if (opt == "-precision") {
 			precision = std::strtod(arg[i + 1].c_str(), nullptr);
+		} else if (opt == "-max_time") {
+			max_time = std::strtod(arg[i + 1].c_str(), nullptr);
 		}
 	}
 
@@ -108,8 +110,7 @@ void Integrator::restart_system(PhysicalDouble kappa) {
 }
 
 int Integrator::integrate(bool verbose) {
-	size_t max_steps = 1e+7;
-	PhysicalDouble max_time = 50;
+	size_t max_steps = 1e+8;
 	system.time_derivative();
 	snapshots.push_back(system);
 	TerminalPlot plot;
