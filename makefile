@@ -25,8 +25,6 @@ DEPS = system.h \
 	   stepfunction.h \
 	   regulator.h \
        realvector.h \
-       plotset.h \
-       plot.h \
 	   integrator.h \
 	   gaussquadrature.h \
 	   rungekutta.h \
@@ -37,8 +35,6 @@ _OBJ = main.o \
 	   stepfunction.o \
 	   regulator.o \
 	   realvector.o \
-	   plotset.o \
-	   plot.o \
 	   integrator.o \
 	   gaussquadrature.o \
 	   rungekutta.o \

@@ -4,7 +4,6 @@
 #include <functional>
 #include <limits>
 #include "stepfunction.h"
-#include "plot.h"
 #include "realvector.h"
 
 class Integrator;

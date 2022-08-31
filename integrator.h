@@ -18,7 +18,6 @@
 #include <queue>
 #include "system.h"
 #include "stepfunction.h"
-#include "plot.h"
 #include "gaussquadrature.h"
 #include "rungekutta.h"
 #include "realvector.h"

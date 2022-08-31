@@ -8,6 +8,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <iomanip>
+#include <cmath>
 #include "integrator.h"
 #include "rungekutta.h"
 #include "terminalplot.h"
