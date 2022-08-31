@@ -50,6 +50,7 @@ Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
 	}
 
 	system = System(this, arg);
+	kappa_max = system.kappa;
 
 	for (size_t i = 0; i < arg.size() - 1; i++) {
 		std::string opt = arg[i];
