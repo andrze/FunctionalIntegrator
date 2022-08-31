@@ -23,11 +23,10 @@
 #include "realvector.h"
 
 struct Task {
-	Task(Integrator *integrator,
-			std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> *integrand,
-			PhysicalDouble *result);
+	Task(Integrator *integrator, std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand,
+		PhysicalDouble *result);
 	class Integrator *integrator;
-	std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> *integrand;
+	std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand;
 	PhysicalDouble *result;
 	bool shutdown = false;
 };
@@ -42,14 +41,14 @@ public:
 
 	std::vector<System> snapshots;
 
-	const ButcherTable runge_kutta_method = rk4;//ssp_rk4;
+	const ButcherTable runge_kutta_method = rk4; //ssp_rk4;
 
 	PhysicalDouble kappa_min = 0, kappa_max;
 	PhysicalDouble precision = 1e-4;
 	PhysicalDouble max_time = 20;
 
 	void restart_system(PhysicalDouble kappa = -1);
-	int integrate(bool verbose=false);
+	int integrate(bool verbose = false);
 	void find_criticality();
 	void save_snapshots(std::string file);
 
@@ -63,16 +62,19 @@ public:
 
 	GaussQuadrature GLIntegrator;
 
-	void push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> f);
-	void reset_integrals(size_t new_size=0);
+	void push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f);
+	void reset_integrals(size_t new_size = 0);
 	std::vector<PhysicalDouble>* evaluate_integrals();
 
 private:
-	std::vector<std::function<PhysicalDouble(std::array<PhysicalDouble,6>)> > integrand_functions; //vector of integrals to be carried out
+	std::vector<std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> > integrand_functions; //vector of integrals to be carried out
 	std::vector<PhysicalDouble> integral_values; //vector of results of the integrals
 	std::vector<std::thread> threads; //vector of threads working on assigned tasks
 	std::vector<std::unique_ptr<std::thread> > workers;
 
 };
+
+void integrate(Task *task, Integrator *integrator);
+void executeTasks(Integrator *integrator);
 
 #endif /* INTEGRATOR_H_ */

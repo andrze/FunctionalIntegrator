@@ -13,39 +13,13 @@
 #include "rungekutta.h"
 #include "terminalplot.h"
 
-void integrate(Task *task, Integrator *integrator) {
-	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));
-}
-
-void executeTasks(Integrator *integrator) {
-	while (true) {
-		std::unique_lock<std::mutex> lock(integrator->tasks_mutex);
-		while (integrator->tasks.empty()) {
-			integrator->tasks_not_empty.wait(lock);
-		}
-		Task *task = integrator->tasks.front();
-		integrator->tasks.pop();
-		lock.unlock();
-		if (task->shutdown) {
-			return;
-		}
-		integrate(task, integrator);
-		lock.lock();
-		integrator->active_tasks_count--;
-		if (integrator->active_tasks_count == 0) {
-			integrator->all_tasks_done.notify_one();
-		}
-		lock.unlock();
-	}
-}
-
 Task::Task(Integrator *integrator, std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand,
-		PhysicalDouble *result) :
-		integrator(integrator), integrand(integrand), result(result) {
+	PhysicalDouble *result) :
+	integrator(integrator), integrand(integrand), result(result) {
 }
 
 Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
-		system_configuration(arg), num_threads(num_threads), tasks_not_empty() {
+	system_configuration(arg), num_threads(num_threads), tasks_not_empty() {
 	if (num_threads <= 0) {
 		throw std::runtime_error("Number of threads should be larger than 0.");
 	}
@@ -160,7 +134,7 @@ void Integrator::find_criticality() {
 
 	for (size_t i = 0; i < max_iter && kappa_max - kappa_min > precision; i++) {
 		restart_system((kappa_min + kappa_max) / 2);
-		std::cout << std::setprecision(-int(std::log10(precision))+2);
+		std::cout << std::setprecision(-int(std::log10(precision)) + 2);
 		std::cout << "Kappa = " << system.kappa << '\n';
 		int phase = integrate();
 		if (phase == 1) {
@@ -254,3 +228,30 @@ std::vector<PhysicalDouble>* Integrator::evaluate_integrals() {
 
 	return &integral_values;
 }
+
+void integrate(Task *task, Integrator *integrator) {
+	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));
+}
+
+void executeTasks(Integrator *integrator) {
+	while (true) {
+		std::unique_lock<std::mutex> lock(integrator->tasks_mutex);
+		while (integrator->tasks.empty()) {
+			integrator->tasks_not_empty.wait(lock);
+		}
+		Task *task = integrator->tasks.front();
+		integrator->tasks.pop();
+		lock.unlock();
+		if (task->shutdown) {
+			return;
+		}
+		integrate(task, integrator);
+		lock.lock();
+		integrator->active_tasks_count--;
+		if (integrator->active_tasks_count == 0) {
+			integrator->all_tasks_done.notify_one();
+		}
+		lock.unlock();
+	}
+}
+

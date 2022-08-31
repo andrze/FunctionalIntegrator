@@ -4,6 +4,8 @@
 #include <map>
 #include "realvector.h"
 
+PhysicalDouble lagrange_polynomial(PhysicalDouble x, RealVector x_values, RealVector y_values);
+
 class StepFunction {
 public:
 	StepFunction();

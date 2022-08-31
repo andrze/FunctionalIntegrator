@@ -6,6 +6,8 @@
 #include "stepfunction.h"
 #include "realvector.h"
 
+PhysicalDouble pow2(PhysicalDouble x);
+
 class Integrator;
 
 class System {
