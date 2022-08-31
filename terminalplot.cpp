@@ -20,7 +20,7 @@ TerminalPlot::~TerminalPlot() {
 
 void TerminalPlot::plot(std::vector<StepFunction> functions) {
 	if (functions.size() > markers.size()) {
-		throw std::invalid_argument("Asked to plot more functions than supported");
+		throw std::invalid_argument("TerminalPlot: Asked to plot more functions than supported");
 	}
 
 	PhysicalDouble min = std::numeric_limits<PhysicalDouble>::max(), max = -std::numeric_limits<PhysicalDouble>::min();

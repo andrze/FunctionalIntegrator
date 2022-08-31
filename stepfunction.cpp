@@ -136,7 +136,7 @@ StepFunction StepFunction::x_func() {
 PhysicalDouble& StepFunction::operator[](size_t i) {
 
 	if (i >= vals.size()) {
-		throw std::invalid_argument("Argument out of function domain");
+		throw std::invalid_argument("StepFunction: Argument out of function domain");
 	}
 	return vals[i];
 }
@@ -147,7 +147,7 @@ PhysicalDouble StepFunction::operator()(PhysicalDouble x) {
 	size_t pos = size_t(std::floor((x - domain_begin) / step_size));
 
 	if (x < domain_begin || x > domain_end() + step_size) {
-		throw std::invalid_argument("Argument out of function domain");
+		throw std::invalid_argument("StepFunction: Argument out of function domain");
 	}
 
 	int slice_begin = std::max(0, int(pos) - INTERPOLATION_ORDER / 2);
@@ -186,7 +186,7 @@ PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
 		semisemiborder_coefficients = DER2_SEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step * inverse_step;
 	} else if (n > 2) {
-		throw std::invalid_argument("Derivative of order larger than 2 are not implemented\n");
+		throw std::invalid_argument("StepFunction: Derivatives of order larger than 2 are not implemented\n");
 	}
 
 	RealVector coefs(coefficients), border_coefs(border_coefficients), semiborder_coefs(semiborder_coefficients),
@@ -252,7 +252,7 @@ StepFunction StepFunction::derivative(size_t n) {
 		semisemiborder_coefficients = DER2_SEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step * inverse_step;
 	} else if (n > 2) {
-		throw std::invalid_argument("Derivative of order larger than 2 are not implemented\n");
+		throw std::invalid_argument("StepFunction: Derivative of order larger than 2 are not implemented\n");
 	}
 
 	for (auto &c : coefficients) {
@@ -325,7 +325,7 @@ RealVector StepFunction::interval(size_t begin, size_t end) {
 	auto it = vals.begin();
 	auto interval_end = std::next(it, int(end));
 	if (interval_end > vals.end()) {
-		throw std::invalid_argument("Interval cannot reach outside arguments range");
+		throw std::invalid_argument("StepFunction: Requested interval extends outside arguments range");
 	}
 
 	auto interval_begin = std::next(it, int(begin));

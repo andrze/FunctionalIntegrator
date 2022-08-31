@@ -18,17 +18,15 @@ class GaussQuadrature {
 public:
 	GaussQuadrature();
 	GaussQuadrature(PhysicalDouble d);
-	//PhysicalDouble partial_integrate(std::function<PhysicalDouble(PhysicalDouble)> f, size_t configuration_index) const;
-	PhysicalDouble partial_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)>& f,
-			size_t configuration_index) const;
-	//PhysicalDouble integrate(std::function<PhysicalDouble(PhysicalDouble)> f) const;
-	PhysicalDouble integrate(std::function<PhysicalDouble(std::array<PhysicalDouble,6>)>& f) const;
+	PhysicalDouble partial_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f,
+		size_t configuration_index) const;
+	PhysicalDouble integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f) const;
 
 private:
 	std::array<std::array<PhysicalDouble, 41>, 41> roots;
 	std::array<std::array<PhysicalDouble, 41>, 41> weights;
 	std::vector<IntegralConfiguration> configurations;
-	std::vector<std::vector<std::array<PhysicalDouble,6> > > evaluation_points;
+	std::vector<std::vector<std::array<PhysicalDouble, 6> > > evaluation_points;
 
 	PhysicalDouble d;
 };

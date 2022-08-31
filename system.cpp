@@ -135,7 +135,7 @@ void System::find_eta() {
 void System::find_eta_minimum() {
 	PhysicalDouble potential_minimum = V().kappa_u(V2).first;
 	if (potential_minimum <= std::numeric_limits<PhysicalDouble>::epsilon()) {
-		throw std::runtime_error("Potential minimum is out of the grid");
+		throw std::runtime_error("System: Potential minimum is out of the grid");
 	}
 	size_t norm = size_t((potential_minimum - V().domain_begin) / V().step_size);
 
@@ -388,7 +388,7 @@ System System::time_derivative() {
 		}
 
 		if (singularity) {
-			throw std::runtime_error("Equations contain a singular propagator " + error);
+			throw std::runtime_error("System: Equations contain a singular propagator " + error);
 		}
 
 		// V flow equation
@@ -517,7 +517,7 @@ System System::time_derivative() {
 void System::rescale() {
 	PhysicalDouble potential_minimum = V().kappa_u().first;
 	if (potential_minimum <= std::numeric_limits<PhysicalDouble>::epsilon()) {
-		throw std::runtime_error("Potential minimum is out of the grid");
+		throw std::runtime_error("System: Potential minimum is out of the grid");
 	}
 	PhysicalDouble z_norm;
 	if (sigma_normalization) {
@@ -622,7 +622,6 @@ PhysicalDouble System::first_val() {
 
 int System::find_phase() {
 	phase = 0;
-//	auto mini_maxi = V().minmax();
 	PhysicalDouble v_at_point_1 = V()[1];
 	PhysicalDouble v_at_point_m1 = V()[V().num_points - 2];
 	if (v_at_point_1 > 0) { // Disordered phase
@@ -671,9 +670,6 @@ std::string System::print_configuration() {
 	configuration << "-a," << a << ',';
 	configuration << "-sigma_normalization," << sigma_normalization << ',';
 	configuration << "-norm_point," << norm_point << ',';
-	/*if (precision < 0) {
-	 configuration << "-prec," << precision << ',';
-	 }*/
 	configuration << "-rho_max," << rho0_to_rhomax << '\n';
 
 	return configuration.str();
@@ -681,7 +677,7 @@ std::string System::print_configuration() {
 
 System& System::operator+=(System rhs) {
 	if (num_functions() != rhs.num_functions()) {
-		throw std::invalid_argument("Parametrizations with different numbers of functions provided");
+		throw std::invalid_argument("System: Adding systems with different numbers of functions");
 	}
 
 	for (size_t i = 0; i < parameters.size(); i++) {

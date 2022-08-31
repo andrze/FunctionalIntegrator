@@ -12,7 +12,7 @@ RealVector::RealVector(std::vector<PhysicalDouble> coords) {
 
 RealVector& RealVector::operator+=(RealVector rhs) {
 	if (coords.size() != rhs.coords.size()) {
-		throw std::invalid_argument("Received RealVectors of different dimensions");
+		throw std::invalid_argument("RealVector::Addition of RealVectors of different dimensions");
 	}
 
 	for (size_t i = 0; i < coords.size(); i++) {
@@ -83,7 +83,7 @@ RealVector operator /(RealVector lhs, PhysicalDouble rhs) {
 
 PhysicalDouble operator *(RealVector lhs, RealVector rhs) {
 	if (lhs.size() != rhs.size()) {
-		throw std::invalid_argument("Received RealVectors of different dimensions");
+		throw std::invalid_argument("RealVector::Product of RealVectors of different dimensions");
 	}
 
 	PhysicalDouble dot_prod = 0.;
@@ -103,7 +103,7 @@ std::ostream& operator <<(std::ostream &out, RealVector v) {
 
 RealVector filter(RealVector v, std::vector<bool> filter_vec) {
 	if (v.size() != filter_vec.size()) {
-		throw std::invalid_argument("Point and filter have different dimensions");
+		throw std::invalid_argument("RealVector::Vector and filter have different dimensions");
 	}
 
 	for (size_t i = 0; i < v.size(); i++) {

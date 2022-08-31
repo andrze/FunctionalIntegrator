@@ -114,7 +114,6 @@ int Integrator::integrate(bool verbose) {
 	system.time_derivative();
 	snapshots.push_back(system);
 	TerminalPlot plot;
-//	PhysicalDouble base_delta_t = system.delta_t;
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		if (i % 1000 == 0) {
@@ -125,9 +124,6 @@ int Integrator::integrate(bool verbose) {
 		}
 		try {
 			runge_kutta_method.runge_kutta_step(system);
-//			system.cut_domain();
-			//system.zoom_in();
-			//system.rescale();
 
 		} catch (const std::runtime_error &err) {
 			std::cout << err.what() << "\n";
@@ -149,23 +145,10 @@ int Integrator::integrate(bool verbose) {
 		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.05) {
 			snapshots.push_back(system);
 		}
-//
-//		PhysicalDouble distance_from_pole = system.a + system.V()[0];
-//		PhysicalDouble new_delta = base_delta_t * std::pow(10, int(std::log10(distance_from_pole)));
-//		if(std::abs(new_delta - system.delta_t) > 1e-15){
-//			if(new_delta < 1e-9){
-//				break;
-//			}
-//			std::cout << std::setprecision(16);
-//			std::cout << system.V()<<'\n';
-//			std::cout << distance_from_pole << ' ' << int(-std::log10(distance_from_pole)) << ' ' << std::pow(10, 1+int(-std::log10(distance_from_pole))) <<  '\n';
-//			std::cout << "Changing delta_t to " << new_delta << '\n';
-//			system.delta_t = new_delta;
-//		}
 
 	}
 	std::cout << '\n';
-	std::cout << "Przekroczono maksymalną liczbę kroków.\n";
+	std::cout << "Simulation exceeded a maximum time or number of steps.\n";
 	return system.find_phase();
 }
 
@@ -194,10 +177,10 @@ void Integrator::find_criticality() {
 
 			if (system.time < 1 || (num_of_negative < V.num_points / 3 && V[0] > -system.a * 0.7)) {
 				kappa_min = system.kappa;
-				std::cout << "Zakończono w fazie nieuporządkowanej (prawdopodobnie)\n";
+				std::cout << "Simulation terminated in a symmetry-broken phase (probably)\n";
 			} else {
 				kappa_max = system.kappa;
-				std::cout << "Zakończono w fazie algebraicznej (prawdopodobnie)\n";
+				std::cout << "Simulation terminated in a disordered phase (probably)\n";
 			}
 		}
 	}

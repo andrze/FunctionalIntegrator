@@ -585,7 +585,7 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 		0.0104982845311528136147422l, 0.0104982845311528136147422l, 0.0045212770985331912584717l,
 		0.0045212770985331912584717l };
 
-	if (std::abs(d-2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
+	if (std::abs(d - 2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 		configurations = { { 0, .05l, 40 }, { 0.05l, .3l, 30 }, { .3l, 1, 40 }, { 1, 3, 20 }, { 3, 15, 20 } };
 	} else {
 		configurations = { { 0, 0.1, 40 }, { 0.1, 3., 40 }, { 3., 7., 20 } };
@@ -598,7 +598,7 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 				+ (config.end - config.start) * roots[config.n][k] / 2;
 			PhysicalDouble y2;
 			std::array<PhysicalDouble, 6> eval_point;
-			if (std::abs(d-2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
+			if (std::abs(d - 2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 				y2 = point;
 				eval_point = { y2, 1.l / 2, R(y2) / 2, Rp(y2) / 2, Rp2(y2) / 2, Prefactor(y2) / 2 };
 			} else {
@@ -618,10 +618,10 @@ PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(s
 	const PhysicalDouble &b = conf.end, a = conf.start;
 	const size_t &n = conf.n;
 	if (n == 0) {
-		throw(std::invalid_argument("Number of integration points must be positive"));
+		throw(std::invalid_argument("GaussQuadrature: Number of integration points must be positive"));
 	}
 	if (n > 40) {
-		throw(std::invalid_argument("Number of integration points larger than 40 not implemented"));
+		throw(std::invalid_argument("GaussQuadrature: Number of integration points larger than 40 is not implemented"));
 	}
 
 	PhysicalDouble sum = 0;
@@ -631,16 +631,6 @@ PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(s
 
 	return sum * (b - a) / 2;
 }
-/*
- PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(PhysicalDouble)> f) const {
- PhysicalDouble integral = 0;
-
- for (size_t k = 0; k < configurations.size(); k++) {
- integral += partial_integrate(f, k);
- }
-
- return integral;
- }*/
 
 PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f) const {
 	PhysicalDouble integral = 0;

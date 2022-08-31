@@ -19,7 +19,7 @@ ButcherTable::ButcherTable() {
 ButcherTable::ButcherTable(size_t steps, std::vector<PhysicalDouble> a_data, std::vector<PhysicalDouble> b_data) :
 		b(b_data) {
 	if (steps != b_data.size()) {
-		throw std::invalid_argument("Wrong size of Runge-Kutta initializing parameters");
+		throw std::invalid_argument("ButcherTable: Wrong size of Runge-Kutta initializing parameters");
 	}
 	size_t counter = 0;
 	for (size_t i = 0; i < steps; i++) {
@@ -41,7 +41,7 @@ ButcherTable::~ButcherTable() {
 
 void ButcherTable::runge_kutta_step(System &initial) const {
 	if (!usable) {
-		throw std::runtime_error("Runge-Kutta method not properly initialized");
+		throw std::runtime_error("ButcherTable: Runge-Kutta method not properly initialized");
 	}
 	PhysicalDouble h = initial.delta_t;
 	std::vector<System> derivatives;

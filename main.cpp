@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 	feraiseexcept(FE_INVALID | FE_OVERFLOW);
 
 	if (argc < 2) {
-		std::cerr << "Nie podano argumentów wejściowych\n";
+		std::cerr << "Program requires a supported task name as the first argument\n";
 		return 0;
 	}
 
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 	} else if (task == "critical") {
 		integrator.find_criticality();
 	} else {
-		std::cerr << "Podano niewłaściwe zadanie dla programu \n";
+		std::cerr << "Program requires a supported task name as the first argument\n";
 		return 0;
 	}
 
