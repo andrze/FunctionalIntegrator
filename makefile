@@ -28,7 +28,8 @@ DEPS = system.h \
 	   integrator.h \
 	   gaussquadrature.h \
 	   rungekutta.h \
-	   terminalplot.h
+	   terminalplot.h \
+	   numericalmethods.h
 
 _OBJ = main.o \
 	   system.o \
@@ -38,7 +39,8 @@ _OBJ = main.o \
 	   integrator.o \
 	   gaussquadrature.o \
 	   rungekutta.o \
-	   terminalplot.o
+	   terminalplot.o \
+	   numericalmethods.o
 	   
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 

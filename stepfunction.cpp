@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "stepfunction.h"
 #include "realvector.h"
+#include "numericalmethods.h"
 
 //const std::vector<PhysicalDouble> DER1_COEFFICIENTS { 1.l / 12, -2.l / 3, 0, 2.l / 3, -1.l / 12 }; // 5 point first derivative
 //const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS { -25.l / 12, 4.l, -3.l, 4.l / 3, -1.l / 4 }; // 5 point first derivative
@@ -47,23 +48,6 @@ const std::vector<PhysicalDouble> DER2_SEMISEMIBORDER_COEFFICIENTS = { -(13.l / 
 const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_COEFFICIENTS, DER1_BORDER_COEFFICIENTS,
 	DER1_SEMIBORDER_COEFFICIENTS, DER1_SEMISEMIBORDER_COEFFICIENTS, DER2_COEFFICIENTS, DER2_BORDER_COEFFICIENTS,
 	DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS };
-
-PhysicalDouble lagrange_polynomial(PhysicalDouble x, RealVector x_values, RealVector y_values) {
-	PhysicalDouble res = 0;
-
-	for (size_t i = 0; i < x_values.size(); i++) {
-		PhysicalDouble li = 1;
-		for (size_t j = 0; j < x_values.size(); j++) {
-			if (j == i) {
-				continue;
-			}
-			li *= x - x_values[j];
-			li /= x_values[i] - x_values[j];
-		}
-		res += li * y_values[i];
-	}
-	return res;
-}
 
 StepFunction::StepFunction() {
 	num_points_derivatives = 0;

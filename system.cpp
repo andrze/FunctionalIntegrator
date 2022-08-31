@@ -9,10 +9,7 @@
 #include "gaussquadrature.h"
 #include "integrator.h"
 #include "realvector.h"
-
-PhysicalDouble pow2(PhysicalDouble x) {
-	return x * x;
-}
+#include "numericalmethods.h"
 
 System::System() {
 }
