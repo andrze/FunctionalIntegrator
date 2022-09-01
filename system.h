@@ -6,6 +6,19 @@
 #include "stepfunction.h"
 #include "realvector.h"
 
+template<typename T, size_t N> bool ArrayLowerEqualComp(std::array<T, N> lhs, std::array<T, N> rhs, size_t pos = 0) {
+	if (pos == N || N == 0) {
+		return true;
+	}
+	if (lhs[pos] < rhs[pos]) {
+		return true;
+	} else if (lhs[pos] > rhs[pos]) {
+		return false;
+	} else {
+		return ArrayLowerEqualComp<T, N>(lhs, rhs, pos + 1);
+	}
+}
+
 class Integrator;
 
 class System {
