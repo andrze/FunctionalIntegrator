@@ -22,17 +22,16 @@ else:
 #            [{'-sigma_normalization': 'false'}]]
 #
 
-options = [[{'-kappa': .88 + i * 0.0015} for i in range(1, 21)],
-           [{'-u': 0.075}],
-           [{'-dim': 2}],
-           [{'-rhomax': 1.6}],
-           [{'-delta': 5e-6}],
+options = [[{'-u': 0.075}],
+           [{'-dim': 1.5 + .1*i, '-kappa': 2.5 - i*.25} for i in range(5)],
+           [{'-rhomax': 1.1}],
+           [{'-delta': 2e-6}],
            [{'-precision': 1e-6}],
            [{'-norm_point': 0}],
-           [{'-num_points': 160}],
+           [{'-num_points': 240}],
            [{'-max_time': 50}],
-           [{'-a': 1.9}],
-           [{'-N': 2}],
+           [{'-a': 2 }],
+           [{'-N': 1.1 + .2 * i } for i in range(5)],
            [{'-sigma_normalization': 'false'}]]
 
 all_configurations = options[0]
@@ -43,7 +42,7 @@ for single_option in options[1:]:
             conf = single_config.copy()
             conf.update(configuration_set)
             if '-N' in conf.keys():
-                conf['-out'] = 'fixed_norm_flow_k=%f_a=%f.csv' % (conf['-kappa'], conf['-a'])
+                conf['-out'] = 'fixed_norm_flow_n=%f_d=%f.csv' % (conf['-N'], conf['-dim'])
             new_configurations.append(conf)
         
     all_configurations = new_configurations
@@ -72,7 +71,7 @@ def submit_jobs():
     
     
     for i, conf in enumerate(all_configurations):
-        time = 60
+        time = 120
         # if mode == "single":
         thread_count = int((i + 1) * MAX_CPUS / MAX_RUNNING_JOBS) - int(i * MAX_CPUS / MAX_RUNNING_JOBS)
         
