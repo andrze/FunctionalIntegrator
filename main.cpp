@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
 	integrator.save_snapshots(outfile);
 
 	auto end = std::chrono::steady_clock::now();
-	std::cout << "Calculations lasted for " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count()
-		<< " seconds.\n";
+	int seconds = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
+	std::cout << "Calculations lasted for " << seconds/3600 <<":"<< (seconds%3600)/60 << ":" << (seconds%60) << ".\n";
 
 	return 0;
 }
