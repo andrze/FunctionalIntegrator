@@ -87,8 +87,16 @@ PhysicalDouble operator *(RealVector lhs, RealVector rhs) {
 	}
 
 	PhysicalDouble dot_prod = 0.;
-	for (size_t i = 0; i < lhs.size(); i++) {
-		dot_prod += lhs[i] * rhs[i];
+	size_t half = lhs.size() / 2;
+	if (lhs.size() % 2 == 0) {
+		for (size_t i = 0; i < half; i++) {
+			dot_prod += (lhs[half - i - 1] * rhs[half - i - 1] + lhs[half + i] * rhs[half + i]);
+		}
+	} else {
+		dot_prod = lhs[half] * rhs[half];
+		for (size_t i = 1; i <= half; i++) {
+			dot_prod += (lhs[half + i] * rhs[half + i] + lhs[half - i] * rhs[half - i]);
+		}
 	}
 
 	return dot_prod;
