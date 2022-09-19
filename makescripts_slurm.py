@@ -23,12 +23,12 @@ else:
 #
 
 options = [[{'-u': 0.075}],
-           [{'-dim': 1.5 + .1*i, '-kappa': 2.5 - i*.25} for i in range(5)],
-           [{'-rhomax': 1.1}],
-           [{'-delta': 2e-6}],
+           [{'-dim': 1.5 + .1*i, '-kappa': 3.5 - i*.4} for i in range(5)],
+           [{'-rhomax': 2}],
+           [{'-delta': 5e-6}],
            [{'-precision': 1e-6}],
            [{'-norm_point': 0}],
-           [{'-num_points': 240}],
+           [{'-num_points': 200}],
            [{'-max_time': 50}],
            [{'-a': 2 }],
            [{'-N': 1.1 + .2 * i } for i in range(5)],
@@ -71,6 +71,9 @@ def submit_jobs():
     
     
     for i, conf in enumerate(all_configurations):
+        if conf['-N'] > conf['-dim']:
+            continue
+        
         time = 120
         # if mode == "single":
         thread_count = int((i + 1) * MAX_CPUS / MAX_RUNNING_JOBS) - int(i * MAX_CPUS / MAX_RUNNING_JOBS)
