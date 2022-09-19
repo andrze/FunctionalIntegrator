@@ -7,47 +7,57 @@
 #include "realvector.h"
 #include "numericalmethods.h"
 
-const std::vector<PhysicalDouble> DER1_COEFFICIENTS { -(1.l / 60), 3.l / 20, -(3.l / 4), 0, 3.l / 4, -(3.l / 20), 1.l
-	/ 60 }; // 7 point first derivative
-const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS { -(49.l / 20), 6.l, -(15.l / 2), 20.l / 3, -(15.l / 4), 6.l
-	/ 5, -(1.l / 6) }; // 7 point first derivative
-const std::vector<PhysicalDouble> DER1_SEMIBORDER_COEFFICIENTS { -(1.l / 6), -(77.l / 60), 5.l / 2, -(5.l / 3), 5.l / 6,
-	-(1.l / 4), 1.l / 30 }; // 7 point first derivative
-const std::vector<PhysicalDouble> DER1_SEMISEMIBORDER_COEFFICIENTS = { 1.l / 30, -(2.l / 5), -(7.l / 12), 4.l / 3, -(1.l
-	/ 2), 2.l / 15, -(1.l / 60) }; // 7 point first derivative
+const std::vector<PhysicalDouble> DER1_BORDER_COEFFICIENTS = { -761.l / 280, 8.l / 1, -14.l / 1, 56.l / 3, -35.l / 2,
+	56.l / 5, -14.l / 3, 8.l / 7, -1.l / 8 };
+const std::vector<PhysicalDouble> DER1_SEMIBORDER_COEFFICIENTS = { -1.l / 8, -223.l / 140, 7.l / 2, -7.l / 2, 35.l / 12,
+	-7.l / 4, 7.l / 10, -1.l / 6, 1.l / 56 };
+const std::vector<PhysicalDouble> DER1_SEMISEMIBORDER_COEFFICIENTS = { 1.l / 56, -2.l / 7, -19.l / 20, 2.l / 1, -5.l
+	/ 4, 2.l / 3, -1.l / 4, 2.l / 35, -1.l / 168 };
+const std::vector<PhysicalDouble> DER1_SEMISEMISEMIBORDER_COEFFICIENTS = { -1.l / 168, 1.l / 14, -1.l / 2, -9.l / 20,
+	5.l / 4, -1.l / 2, 1.l / 6, -1.l / 28, 1.l / 280 };
+const std::vector<PhysicalDouble> DER1_CENTRAL_COEFFICIENTS = { 1.l / 280, -4.l / 105, 1.l / 5, -4.l / 5, 0.l / 1, 4.l
+	/ 5, -1.l / 5, 4.l / 105, -1.l / 280 };
 
-const std::vector<PhysicalDouble> DER2_COEFFICIENTS = { 1.l / 90, -(3.l / 20), 3.l / 2, -(49.l / 18), 3.l / 2, -(3.l
-	/ 20), 1.l / 90 }; // 7 point second derivative
-const std::vector<PhysicalDouble> DER2_BORDER_COEFFICIENTS = { 203.l / 45, -(87.l / 5), 117.l / 4, -(254.l / 9), 33.l
-	/ 2, -(27.l / 5), 137.l / 180 }; // 7 point second derivative
-const std::vector<PhysicalDouble> DER2_SEMIBORDER_COEFFICIENTS = { 137.l / 180, -(49.l / 60), -(17.l / 12), 47.l / 18,
-	-(19.l / 12), 31.l / 60, -(13.l / 180) }; // 7 point second derivative
-const std::vector<PhysicalDouble> DER2_SEMISEMIBORDER_COEFFICIENTS = { -(13.l / 180), 19.l / 15, -(7.l / 3), 10.l / 9,
-	1.l / 12, -(1.l / 15), 1.l / 90 }; // 7 point second derivative
+const std::vector<PhysicalDouble> DER2_BORDER_COEFFICIENTS = { 29531.l / 5040, -962.l / 35, 621.l / 10, -4006.l / 45,
+	691.l / 8, -282.l / 5, 2143.l / 90, -206.l / 35, 363.l / 560 };
+const std::vector<PhysicalDouble> DER2_SEMIBORDER_COEFFICIENTS = { 363.l / 560, 8.l / 315, -83.l / 20, 153.l / 20,
+	-529.l / 72, 47.l / 10, -39.l / 20, 599.l / 1260, -29.l / 560 };
+const std::vector<PhysicalDouble> DER2_SEMISEMIBORDER_COEFFICIENTS = { -29.l / 560, 39.l / 35, -331.l / 180, 1.l / 5,
+	9.l / 8, -37.l / 45, 7.l / 20, -3.l / 35, 47.l / 5040 };
+const std::vector<PhysicalDouble> DER2_SEMISEMISEMIBORDER_COEFFICIENTS = { 47.l / 5040, -19.l / 140, 29.l / 20, -118.l
+	/ 45, 11.l / 8, -1.l / 20, -7.l / 180, 1.l / 70, -1.l / 560 };
+const std::vector<PhysicalDouble> DER2_CENTRAL_COEFFICIENTS = { -1.l / 560, 8.l / 315, -1.l / 5, 8.l / 5, -205.l / 72,
+	8.l / 5, -1.l / 5, 8.l / 315, -1.l / 560 };
 
-const std::vector<PhysicalDouble> DER3_COEFFICIENTS = { 1.l / 8, -1.l / 1, 13.l / 8, 0.l / 1, -13.l / 8, 1.l / 1, -1.l
-	/ 8 }; // 7 point third derivative
-const std::vector<PhysicalDouble> DER3_BORDER_COEFFICIENTS = { -49.l / 8, 29.l / 1, -461.l / 8, 62.l / 1, -307.l / 8,
-	13.l / 1, -15.l / 8 }; // 7 point third derivative
-const std::vector<PhysicalDouble> DER3_SEMIBORDER_COEFFICIENTS = { -15.l / 8, 7.l / 1, -83.l / 8, 8.l / 1, -29.l / 8,
-	1.l / 1, -1.l / 8 }; // 7 point third derivative
-const std::vector<PhysicalDouble> DER3_SEMISEMIBORDER_COEFFICIENTS = { -1.l / 8, -1.l / 1, 35.l / 8, -6.l / 1, 29.l / 8,
-	-1.l / 1, 1.l / 8 }; // 7 point third derivative
+const std::vector<PhysicalDouble> DER3_BORDER_COEFFICIENTS = { -801.l / 80, 349.l / 6, -18353.l / 120, 2391.l / 10,
+	-1457.l / 6, 4891.l / 30, -561.l / 8, 527.l / 30, -469.l / 240 };
+const std::vector<PhysicalDouble> DER3_SEMIBORDER_COEFFICIENTS = { -469.l / 240, 303.l / 40, -731.l / 60, 269.l / 24,
+	-57.l / 8, 407.l / 120, -67.l / 60, 9.l / 40, -1.l / 48 };
+const std::vector<PhysicalDouble> DER3_SEMISEMIBORDER_COEFFICIENTS = { -1.l / 48, -53.l / 30, 273.l / 40, -313.l / 30,
+	103.l / 12, -9.l / 2, 197.l / 120, -11.l / 30, 3.l / 80 };
+const std::vector<PhysicalDouble> DER3_SEMISEMISEMIBORDER_COEFFICIENTS = { 3.l / 80, -43.l / 120, -5.l / 12, 147.l / 40,
+	-137.l / 24, 463.l / 120, -27.l / 20, 7.l / 24, -7.l / 240 };
+const std::vector<PhysicalDouble> DER3_CENTRAL_COEFFICIENTS = { -7.l / 240, 3.l / 10, -169.l / 120, 61.l / 30, 0.l / 1,
+	-61.l / 30, 169.l / 120, -3.l / 10, 7.l / 240 };
 
-const std::vector<PhysicalDouble> DER4_COEFFICIENTS = { -1.l / 6, 2.l / 1, -13.l / 2, 28.l / 3, -13.l / 2, 2.l / 1, -1.l
-	/ 6 }; // 7 point fourth derivative
-const std::vector<PhysicalDouble> DER4_BORDER_COEFFICIENTS = { 35.l / 6, -31.l / 1, 137.l / 2, -242.l / 3, 107.l / 2,
-	-19.l / 1, 17.l / 6 }; // 7 point fourth derivative
-const std::vector<PhysicalDouble> DER4_SEMIBORDER_COEFFICIENTS = { 17.l / 6, -14.l / 1, 57.l / 2, -92.l / 3, 37.l / 2,
-	-6.l / 1, 5.l / 6 }; // 7 point fourth derivative
-const std::vector<PhysicalDouble> DER4_SEMISEMIBORDER_COEFFICIENTS = { 5.l / 6, -3.l / 1, 7.l / 2, -2.l / 3, -3.l / 2,
-	1.l / 1, -1.l / 6 }; // 7 point fourth derivative
+const std::vector<PhysicalDouble> DER4_BORDER_COEFFICIENTS = { 1069.l / 80, -1316.l / 15, 15289.l / 60, -2144.l / 5,
+	10993.l / 24, -4772.l / 15, 2803.l / 20, -536.l / 15, 967.l / 240 };
+const std::vector<PhysicalDouble> DER4_SEMIBORDER_COEFFICIENTS = { 967.l / 240, -229.l / 10, 3439.l / 60, -2509.l / 30,
+	631.l / 8, -1489.l / 30, 1219.l / 60, -49.l / 10, 127.l / 240 };
+const std::vector<PhysicalDouble> DER4_SEMISEMIBORDER_COEFFICIENTS = { 127.l / 240, -11.l / 15, -77.l / 20, 193.l / 15,
+	-407.l / 24, 61.l / 5, -311.l / 60, 19.l / 15, -11.l / 80 };
+const std::vector<PhysicalDouble> DER4_SEMISEMISEMIBORDER_COEFFICIENTS = { -11.l / 80, 53.l / 30, -341.l / 60, 77.l
+	/ 10, -107.l / 24, 11.l / 30, 13.l / 20, -7.l / 30, 7.l / 240 };
+const std::vector<PhysicalDouble> DER4_CENTRAL_COEFFICIENTS = { 7.l / 240, -2.l / 5, 169.l / 60, -122.l / 15, 91.l / 8,
+	-122.l / 15, 169.l / 60, -2.l / 5, 7.l / 240 };
 
-const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_COEFFICIENTS, DER1_BORDER_COEFFICIENTS,
-	DER1_SEMIBORDER_COEFFICIENTS, DER1_SEMISEMIBORDER_COEFFICIENTS, DER2_COEFFICIENTS, DER2_BORDER_COEFFICIENTS,
-	DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS, DER3_COEFFICIENTS, DER3_BORDER_COEFFICIENTS,
-	DER3_SEMIBORDER_COEFFICIENTS, DER3_SEMISEMIBORDER_COEFFICIENTS, DER4_COEFFICIENTS, DER4_BORDER_COEFFICIENTS,
-	DER4_SEMIBORDER_COEFFICIENTS, DER4_SEMISEMIBORDER_COEFFICIENTS };
+const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_CENTRAL_COEFFICIENTS, DER1_BORDER_COEFFICIENTS,
+	DER1_SEMIBORDER_COEFFICIENTS, DER1_SEMISEMIBORDER_COEFFICIENTS, DER1_SEMISEMISEMIBORDER_COEFFICIENTS,
+	DER2_CENTRAL_COEFFICIENTS, DER2_BORDER_COEFFICIENTS, DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS,
+	DER2_SEMISEMISEMIBORDER_COEFFICIENTS, DER3_CENTRAL_COEFFICIENTS, DER3_BORDER_COEFFICIENTS,
+	DER3_SEMIBORDER_COEFFICIENTS, DER3_SEMISEMIBORDER_COEFFICIENTS, DER3_SEMISEMISEMIBORDER_COEFFICIENTS,
+	DER4_CENTRAL_COEFFICIENTS, DER4_BORDER_COEFFICIENTS, DER4_SEMIBORDER_COEFFICIENTS, DER4_SEMISEMIBORDER_COEFFICIENTS,
+	DER4_SEMISEMISEMIBORDER_COEFFICIENTS };
 
 StepFunction::StepFunction() {
 	num_points_derivatives = 0;
@@ -156,42 +166,47 @@ PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
 
 	PhysicalDouble inverse_step = 1 / step_size;
 	PhysicalDouble normalization = 1;
-	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients, semisemiborder_coefficients;
+	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients, semisemiborder_coefficients,
+		semisemisemiborder_coefficients;
 	if (n == 1) {
-		coefficients = DER1_COEFFICIENTS;
+		coefficients = DER1_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER1_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER1_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER1_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER1_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step;
 	} else if (n == 2) {
-		coefficients = DER2_COEFFICIENTS;
+		coefficients = DER2_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER2_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER2_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER2_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER2_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step * inverse_step;
 	} else if (n == 3) {
-		coefficients = DER3_COEFFICIENTS;
+		coefficients = DER3_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER3_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER3_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER3_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER3_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = std::pow(inverse_step, 3);
 	} else if (n == 4) {
-		coefficients = DER4_COEFFICIENTS;
+		coefficients = DER4_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER4_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER4_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER4_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER4_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = std::pow(inverse_step, 4);
 	} else {
 		throw std::invalid_argument("StepFunction: Derivatives of order larger than 4 are not implemented\n");
 	}
 
 	RealVector coefs(coefficients), border_coefs(border_coefficients), semiborder_coefs(semiborder_coefficients),
-		semisemiborder_coefs(semisemiborder_coefficients);
+		semisemiborder_coefs(semisemiborder_coefficients), semisemisemiborder_coefs(semisemisemiborder_coefficients);
 
 	RealVector used_coefs;
 	RealVector slice;
 
-	if (pos > 1 && pos < vals.size() - 2) {
+	if (pos > 2 && pos < vals.size() - 3) {
 		used_coefs = coefs;
 		size_t size = coefs.size();
 		slice = interval(pos - size / 2, pos + 1 + size / 2);
@@ -204,6 +219,14 @@ PhysicalDouble StepFunction::derivative(size_t n, size_t pos) {
 	} else if (pos == 2) {
 		slice = interval(pos - 2, pos - 2 + semisemiborder_coefs.size());
 		used_coefs = semisemiborder_coefs;
+	} else if (pos == 3) {
+		slice = interval(pos - 3, pos - 3 + semisemisemiborder_coefs.size());
+		used_coefs = semisemisemiborder_coefs;
+	} else if (pos == vals.size() - 4) {
+		slice = interval(pos + 3, pos + 3 - semisemisemiborder_coefs.size());
+		used_coefs = semisemisemiborder_coefs;
+		if (n % 2 == 1)
+			used_coefs *= -1;
 	} else if (pos == vals.size() - 3) {
 		slice = interval(pos + 2, pos + 2 - semisemiborder_coefs.size());
 		used_coefs = semisemiborder_coefs;
@@ -234,33 +257,38 @@ StepFunction StepFunction::derivative(size_t n) {
 
 	PhysicalDouble inverse_step = 1 / step_size;
 	PhysicalDouble normalization = 1;
-	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients, semisemiborder_coefficients;
+	std::vector<PhysicalDouble> coefficients, border_coefficients, semiborder_coefficients, semisemiborder_coefficients,
+		semisemisemiborder_coefficients;
 	if (n == 1) {
-		coefficients = DER1_COEFFICIENTS;
+		coefficients = DER1_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER1_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER1_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER1_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER1_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step;
 	} else if (n == 2) {
-		coefficients = DER2_COEFFICIENTS;
+		coefficients = DER2_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER2_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER2_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER2_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER2_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = inverse_step * inverse_step;
 	} else if (n == 3) {
-		coefficients = DER3_COEFFICIENTS;
+		coefficients = DER3_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER3_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER3_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER3_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER3_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = std::pow(inverse_step, 3);
 	} else if (n == 4) {
-		coefficients = DER4_COEFFICIENTS;
+		coefficients = DER4_CENTRAL_COEFFICIENTS;
 		border_coefficients = DER4_BORDER_COEFFICIENTS;
 		semiborder_coefficients = DER4_SEMIBORDER_COEFFICIENTS;
 		semisemiborder_coefficients = DER4_SEMISEMIBORDER_COEFFICIENTS;
+		semisemisemiborder_coefficients = DER4_SEMISEMISEMIBORDER_COEFFICIENTS;
 		normalization = std::pow(inverse_step, 4);
 	} else {
-		throw std::invalid_argument("StepFunction: Derivative of order larger than 2 are not implemented\n");
+		throw std::invalid_argument("StepFunction: Derivatives of order larger than 4 are not implemented\n");
 	}
 
 	for (auto &c : coefficients) {
@@ -275,15 +303,18 @@ StepFunction StepFunction::derivative(size_t n) {
 	for (auto &c : semisemiborder_coefficients) {
 		c *= normalization;
 	}
+	for (auto &c : semisemisemiborder_coefficients) {
+		c *= normalization;
+	}
 
 	RealVector coefs(coefficients), border_coefs(border_coefficients), semiborder_coefs(semiborder_coefficients),
-		semisemiborder_coefs(semisemiborder_coefficients);
+		semisemiborder_coefs(semisemiborder_coefficients), semisemisemiborder_coefs(semisemisemiborder_coefficients);
 
 	for (size_t i = 0; i < vals.size(); i++) {
 		RealVector used_coefs;
 		RealVector slice;
 
-		if (i > 2 && i < vals.size() - 3) {
+		if (i > 3 && i < vals.size() - 4) {
 			used_coefs = coefs;
 			size_t size = coefs.size();
 			slice = interval(i - size / 2, i + 1 + size / 2);
@@ -296,6 +327,14 @@ StepFunction StepFunction::derivative(size_t n) {
 		} else if (i == 2) {
 			slice = interval(0, semisemiborder_coefs.size());
 			used_coefs = semisemiborder_coefs;
+		} else if (i == 3) {
+			slice = interval(0, semisemisemiborder_coefs.size());
+			used_coefs = semisemisemiborder_coefs;
+		} else if (i == vals.size() - 4) {
+			slice = interval(vals.size(), vals.size() - semisemisemiborder_coefs.size());
+			used_coefs = semisemisemiborder_coefs;
+			if (n % 2 == 1)
+				used_coefs *= -1;
 		} else if (i == vals.size() - 3) {
 			slice = interval(vals.size(), vals.size() - semisemiborder_coefs.size());
 			used_coefs = semisemiborder_coefs;
