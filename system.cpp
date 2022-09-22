@@ -132,7 +132,7 @@ void System::push_time_derivative_integrals(size_t i) {
 	PhysicalDouble zs = Zs()[i], zs1 = Zs1[i], zs2 = Zs2[i];
 	PhysicalDouble zp = Zp()[i], zp1 = Zp1[i], zp2 = Zp2[i];
 
-	if(cached_regulator_vals.size() < y_max / y_step){
+	if (cached_regulator_vals.size() < y_max / y_step) {
 		cache_regulator();
 	}
 
@@ -167,7 +167,7 @@ void System::push_time_derivative_integrals(size_t i) {
 
 		PhysicalDouble f2 = zp1 + zs1;
 		auto integrands = [=](IntegrandArgument args) {
-			PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
+			PhysicalDouble y2 = args[0], yd = args[1], ry = args[2], prefactor = args[5];
 			PhysicalDouble pref = yd * (prefactor - eta_copy * ry);
 			PhysicalDouble g = (v + ry + y2 * zs);
 			PhysicalDouble f1 = g * g;
@@ -191,8 +191,7 @@ void System::push_time_derivative_integrals(size_t i) {
 		PhysicalDouble f151 = (zp + f111) - zs;
 
 		auto integrands = [=](IntegrandArgument args) {
-			PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rpy2 = a * args[4],
-				prefactor = a * args[5];
+			PhysicalDouble y2 = args[0], yd = args[1], ry = args[2], rpy = args[3], rpy2 = args[4], prefactor = args[5];
 			PhysicalDouble pref = yd * (prefactor - eta_copy * ry);
 			PhysicalDouble gp = v + ry + y2 * zp;
 			PhysicalDouble gs = v + 2 * rho * v1 + ry + y2 * zs;
@@ -406,7 +405,7 @@ void System::cut_domain() {
 	const double LOWER_THRESHOLD = -a * 2;
 	const double UPPER_THRESHOLD = 5e+3;
 
-	if (*V().begin() > LOWER_THRESHOLD && *std::next(V().end(),-1) < UPPER_THRESHOLD) {
+	if (*V().begin() > LOWER_THRESHOLD && *std::next(V().end(), -1) < UPPER_THRESHOLD) {
 		return;
 	}
 
@@ -520,7 +519,7 @@ System& System::operator*=(PhysicalDouble rhs) {
 	return *this;
 }
 
-void System::cache_regulator(){
+void System::cache_regulator() {
 	cached_regulator_vals.clear();
 	for (size_t i = 0; i <= y_max / y_step; i++) {
 		PhysicalDouble y = i * y_step;

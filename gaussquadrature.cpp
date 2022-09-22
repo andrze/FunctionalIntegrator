@@ -10,11 +10,10 @@ IntegralConfiguration::IntegralConfiguration(PhysicalDouble start, PhysicalDoubl
 }
 
 GaussQuadrature::GaussQuadrature() {
-	d = 0;
 }
 
-GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
-	d(d) {
+GaussQuadrature::GaussQuadrature(PhysicalDouble d, PhysicalDouble a) :
+	d(d), a(a) {
 
 	roots[1] = { 0l };
 	weights[1] = { 2.0000000000000000000000000l };
@@ -602,10 +601,11 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 			IntegrandArgument eval_point;
 			if (std::abs(d - 2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 				y2 = point;
-				eval_point = { y2, 1.l / 2, R(y2) / 2, Rp(y2) / 2, Rp2(y2) / 2, Prefactor(y2) / 2 };
+				eval_point = { y2, 1.l / 2, R(y2) * a / 2, Rp(y2) * a / 2, Rp2(y2) * a / 2, Prefactor(y2) * a / 2 };
 			} else {
 				y2 = point * point;
-				eval_point = { y2, std::pow(point, d - 1), R(y2) / 2, Rp(y2) / 2, Rp2(y2) / 2, Prefactor(y2) / 2 };
+				eval_point = { y2, std::pow(point, d - 1), R(y2) * a / 2, Rp(y2) * a / 2, Rp2(y2) * a / 2, Prefactor(y2)
+					* a / 2 };
 			}
 
 			one_config_eval_points.push_back(eval_point);
@@ -643,11 +643,11 @@ IntegrandValue GaussQuadrature::partial_integrate(IntegrandFunction &f, size_t c
 }
 
 IntegrandValue GaussQuadrature::integrate(IntegrandFunction &f) const {
-	IntegrandValue integral{0,0,0};
+	IntegrandValue integral { 0, 0, 0 };
 
 	for (size_t k = 0; k < configurations.size(); k++) {
 		auto partial_integral = partial_integrate(f, k);
-		for(size_t j=0; j<integral.size(); j++ ){
+		for (size_t j = 0; j < integral.size(); j++) {
 			//std::cout << partial_integral[j] << '\n';
 			integral[j] += partial_integral[j];
 		}

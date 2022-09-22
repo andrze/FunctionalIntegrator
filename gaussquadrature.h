@@ -21,7 +21,7 @@ public:
 class GaussQuadrature {
 public:
 	GaussQuadrature();
-	GaussQuadrature(PhysicalDouble d);
+	GaussQuadrature(PhysicalDouble d, PhysicalDouble a);
 	IntegrandValue partial_integrate(IntegrandFunction &f, size_t configuration_index) const;
 	IntegrandValue integrate(IntegrandFunction &f) const;
 
@@ -31,7 +31,7 @@ private:
 	std::vector<IntegralConfiguration> configurations;
 	std::vector<std::vector<IntegrandArgument> > evaluation_points;
 
-	PhysicalDouble d;
+	PhysicalDouble d = 0, a = 0;
 };
 
 #endif // GAUSSQUADRATURE_H

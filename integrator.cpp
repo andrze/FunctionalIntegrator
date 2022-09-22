@@ -64,7 +64,7 @@ Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
 		threads.emplace_back(executeTasks, this);
 	}
 
-	GLIntegrator = GaussQuadrature(system.d);
+	GLIntegrator = GaussQuadrature(system.d, system.a);
 }
 
 //Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
