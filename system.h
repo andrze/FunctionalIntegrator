@@ -86,6 +86,9 @@ public:
 	System& operator+=(System rhs);
 	System& operator*=(PhysicalDouble rhs);
 
+	PhysicalDouble y_step=0.05, y_max=4;
+	void cache_regulator();
+	std::vector<PhysicalDouble> cached_regulator_vals;
 };
 
 System operator+(System lhs, System rhs);

@@ -132,25 +132,36 @@ void System::push_time_derivative_integrals(size_t i) {
 	PhysicalDouble zs = Zs()[i], zs1 = Zs1[i], zs2 = Zs2[i];
 	PhysicalDouble zp = Zp()[i], zp1 = Zp1[i], zp2 = Zp2[i];
 
-	bool singularity = false;
-	std::string error;
-	if (v1 < -a) {
-		error = "V(" + std::to_string(i) + ") = " + std::to_string(v1);
-		singularity = true;
-	} else if ((v1 + 2 * rho * v2) < -a) {
-		error = "V + 2 r V'(" + std::to_string(i) + ") = " + std::to_string((v1 + 2 * rho * v2));
-		singularity = true;
-	} else if (zs < 0) {
-		error = "Zs(" + std::to_string(i) + ") = " + std::to_string(zs);
-		singularity = true;
-	} else if (zp < 0) {
-		error = "Zp(" + std::to_string(i) + ") = " + std::to_string(zp);
-		singularity = true;
+	if(cached_regulator_vals.size() < y_max / y_step){
+		cache_regulator();
 	}
 
-	if (singularity) {
-		throw std::runtime_error("Equations contain a singular propagator " + error);
+	for (size_t k = 0; k <= y_max / y_step; k++) {
+		PhysicalDouble y = k * y_step, r = cached_regulator_vals[k];
+		if (v + zp * y * y + r < 0.005) {
+			throw std::runtime_error(
+				"Equations contain a singular propagator at rho=" + std::to_string(rho) + ", y=" + std::to_string(y));
+		}
 	}
+//	bool singularity = false;
+//	std::string error;
+//	if (v1 < -a) {
+//		error = "V(" + std::to_string(i) + ") = " + std::to_string(v1);
+//		singularity = true;
+//	} else if ((v1 + 2 * rho * v2) < -a) {
+//		error = "V + 2 r V'(" + std::to_string(i) + ") = " + std::to_string((v1 + 2 * rho * v2));
+//		singularity = true;
+//	} else if (zs < 0) {
+//		error = "Zs(" + std::to_string(i) + ") = " + std::to_string(zs);
+//		singularity = true;
+//	} else if (zp < 0) {
+//		error = "Zp(" + std::to_string(i) + ") = " + std::to_string(zp);
+//		singularity = true;
+//	}
+
+//	if (singularity) {
+//		throw std::runtime_error("Equations contain a singular propagator " + error);
+//	}
 	PhysicalDouble eta_copy = eta;
 	if (i == 0) {
 
@@ -392,13 +403,14 @@ void System::zoom_in() {
 }
 
 void System::cut_domain() {
-	std::vector<PhysicalDouble> v_vals(V().begin(), V().end()), xs = V().xs();
 	const double LOWER_THRESHOLD = -a * 2;
-	const double UPPER_THRESHOLD = 1e+4;
+	const double UPPER_THRESHOLD = 5e+3;
 
-	if (v_vals[0] > LOWER_THRESHOLD && v_vals[0] < v_vals[1] && v_vals.back() < UPPER_THRESHOLD) {
+	if (*V().begin() > LOWER_THRESHOLD && *std::next(V().end(),-1) < UPPER_THRESHOLD) {
 		return;
 	}
+
+	std::vector<PhysicalDouble> v_vals(V().begin(), V().end()), xs = V().xs();
 
 	size_t rescale_begin = 0, rescale_end = v_vals.size();
 
@@ -414,7 +426,7 @@ void System::cut_domain() {
 	if (v_vals.back() > UPPER_THRESHOLD) {
 		for (size_t i = rescale_begin + 1; i < v_vals.size(); i++) {
 			if (v_vals[i] > UPPER_THRESHOLD) {
-				rescale_end = i - 1;
+				rescale_end = i;
 				break;
 			}
 		}
@@ -506,6 +518,14 @@ System& System::operator*=(PhysicalDouble rhs) {
 		parameters[i] = parameters[i] * rhs;
 	}
 	return *this;
+}
+
+void System::cache_regulator(){
+	cached_regulator_vals.clear();
+	for (size_t i = 0; i <= y_max / y_step; i++) {
+		PhysicalDouble y = i * y_step;
+		cached_regulator_vals.push_back(a / 2 * R(y * y));
+	}
 }
 
 System operator+(System lhs, System rhs) {
