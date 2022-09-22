@@ -126,6 +126,7 @@ int Integrator::integrate(bool verbose) {
 		}
 		try {
 			runge_kutta_method.runge_kutta_step(system);
+			system.cut_domain();
 
 		} catch (const std::runtime_error &err) {
 			std::cout << err.what() << "\n";
