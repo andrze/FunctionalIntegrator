@@ -588,7 +588,8 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 	if (std::abs(d - 2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 		configurations = { { 0, 0.05l, 40 }, { 0.05l, 0.3l, 30 }, { 0.3l, 1, 40 }, { 1, 3, 20 }, { 3, 15, 20 } };
 	} else {
-		configurations = { { 0, 0.01l, 40 }, { 0.01l, 0.5l, 30 }, { 0.5l, 1, 40 }, { 1, 2, 20 }, { 2, 4, 20 } };
+		configurations = { { 0, 0.005l, 40 }, { 0.005l, 0.1l, 30 }, { 0.1l, 0.5l, 30 }, { 0.5l, 1, 40 }, { 1, 2, 20 }, { 2, 4, 20 } };
+		//configurations = { { 0, 0.01l, 5 }, { 0.01l, 0.5l, 10 }, { 0.5l, 1, 10 }, { 1, 2, 10 }, { 2, 4, 5 } };
 	}
 
 	for (auto &&config : configurations) {
