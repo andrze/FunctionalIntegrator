@@ -16,19 +16,24 @@
 class ButcherTable {
 public:
 	ButcherTable();
-	ButcherTable(size_t steps, std::vector<PhysicalDouble> a_data, std::vector<PhysicalDouble> b_data);
+	ButcherTable(size_t steps, std::vector<PhysicalDouble> a_data, std::vector<PhysicalDouble> b_data,
+		std::vector<PhysicalDouble> b_err_data={});
 
 	virtual ~ButcherTable();
 
+	bool embedded=false;
 	std::vector<std::vector<PhysicalDouble> > a;
 	std::vector<PhysicalDouble> b;
-	void runge_kutta_step(System& initial) const;
-	bool usable=false;
+	std::vector<PhysicalDouble> b_err;
+	std::vector<PhysicalDouble> b_trunc;
+	void runge_kutta_step(System &initial) const;
+	bool usable = false;
+	PhysicalDouble error_tolerance=1e-10, delta_cutoff = 2e-6;
 
 };
 
 std::ostream& operator<<(std::ostream &out, ButcherTable t);
 
-extern const ButcherTable euler, rk4, ssp_rk3, ssp_rk4;
+extern const ButcherTable euler, rk4, ssp_rk3, ssp_rk4, rkf;
 
 #endif /* RUNGEKUTTA_H_ */
