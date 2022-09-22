@@ -506,7 +506,7 @@ System System::time_derivative() {
 	derivative.parameters.push_back(zp_der);
 	derivative.eta = eta;
 
-	beta_squared = derivative.full_vector_representation().norm() / std::sqrt(parameters.size() * V().num_points);
+	beta_squared = derivative.full_vector_representation().norm();
 
 	return derivative;
 }
@@ -705,9 +705,11 @@ System operator*(PhysicalDouble lhs, System rhs) {
 }
 
 std::ostream& operator<<(std::ostream &out, System s) {
-	out << "Rho,V,Zs,Zp\n";
+	out << "Rho,V,Zs,Zp,V1,Zs1,Zp1,V2,Zs2,Zp2\n";
+	s.precalculate_rho_derivatives();
 	for (size_t i = 0; i < s.V().num_points; i++) {
-		out << s.V().x_func()[i] << ',' << s.V()[i] << ',' << s.Zs()[i] << ',' << s.Zp()[i] << '\n';
+		out << s.V().x_func()[i] << ',' << s.V()[i] << ',' << s.Zs()[i] << ',' << s.Zp()[i] << ',' << s.V2[i] << ','
+			<< s.Zs1[i] << ',' << s.Zp1[i] << ',' << s.V3[i] << ',' << s.Zs2[i] << ',' << s.Zp2[i] << '\n';
 	}
 
 	return out;

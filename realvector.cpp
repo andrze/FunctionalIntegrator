@@ -58,7 +58,7 @@ PhysicalDouble RealVector::norm() {
 	for (auto &&c : coords) {
 		norm_sq += c * c;
 	}
-	return std::sqrt(norm_sq);
+	return std::sqrt(norm_sq/size());
 }
 
 RealVector operator +(RealVector lhs, RealVector rhs) {
