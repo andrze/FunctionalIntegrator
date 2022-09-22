@@ -41,7 +41,7 @@ public:
 
 	std::vector<System> snapshots;
 
-	const ButcherTable runge_kutta_method = rk4; //ssp_rk4;
+	const ButcherTable runge_kutta_method = rkf; //ssp_rk4;
 
 	PhysicalDouble kappa_min = 0, kappa_max;
 	PhysicalDouble precision = 1e-4;

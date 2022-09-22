@@ -91,8 +91,13 @@ int Integrator::integrate(bool verbose) {
 	TerminalPlot plot;
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
-		if (i % 1000 == 0) {
-			std::cout << std::setprecision(5) << system.time << ", " << system.eta << '\n';
+		PhysicalDouble time = system.time;
+		if (int(20 * time) != int(20 * (time - system.delta_t))) {
+			std::cout << "Step " << system.step;
+			std::cout << std::setprecision(2) << ", t " << system.time;
+			std::cout << ", eta "<< std::setprecision(4) << system.eta;
+			std::cout << ", delta_t " << std::scientific  << std::setprecision(1) << system.delta_t << '\n';
+			std::cout << std::fixed;
 			if (verbose) {
 				plot.plot(system.parameters);
 			}
@@ -110,7 +115,7 @@ int Integrator::integrate(bool verbose) {
 		int phase = system.find_phase();
 		if (phase != 0) {
 			system.time_after_phase_diagnosis -= system.delta_t;
-			if (system.time_after_phase_diagnosis <= 0) {
+			if (system.time_after_phase_diagnosis <= 0 || phase == 1) {
 				std::cout << '\n';
 				std::cout << system.print_phase();
 				return phase;
