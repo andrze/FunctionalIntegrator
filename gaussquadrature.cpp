@@ -588,17 +588,18 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 	if (std::abs(d - 2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 		configurations = { { 0, 0.05l, 40 }, { 0.05l, 0.3l, 30 }, { 0.3l, 1, 40 }, { 1, 3, 20 }, { 3, 15, 20 } };
 	} else {
-		configurations = { { 0, 0.005l, 40 }, { 0.005l, 0.1l, 30 }, { 0.1l, 0.5l, 30 }, { 0.5l, 1, 40 }, { 1, 2, 20 }, { 2, 4, 20 } };
+		configurations = { { 0, 0.005l, 40 }, { 0.005l, 0.1l, 30 }, { 0.1l, 0.5l, 30 }, { 0.5l, 1, 40 }, { 1, 2, 20 }, {
+			2, 4, 20 } };
 		//configurations = { { 0, 0.01l, 5 }, { 0.01l, 0.5l, 10 }, { 0.5l, 1, 10 }, { 1, 2, 10 }, { 2, 4, 5 } };
 	}
 
 	for (auto &&config : configurations) {
-		std::vector<std::array<PhysicalDouble, 6> > one_config_eval_points;
+		std::vector<IntegrandArgument> one_config_eval_points;
 		for (size_t k = 0; k < config.n; k++) {
 			PhysicalDouble point = (config.start + config.end) / 2
 				+ (config.end - config.start) * roots[config.n][k] / 2;
 			PhysicalDouble y2;
-			std::array<PhysicalDouble, 6> eval_point;
+			IntegrandArgument eval_point;
 			if (std::abs(d - 2) < std::numeric_limits<PhysicalDouble>::epsilon()) {
 				y2 = point;
 				eval_point = { y2, 1.l / 2, R(y2) / 2, Rp(y2) / 2, Rp2(y2) / 2, Prefactor(y2) / 2 };
@@ -613,31 +614,43 @@ GaussQuadrature::GaussQuadrature(PhysicalDouble d) :
 	}
 }
 
-PhysicalDouble GaussQuadrature::partial_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f,
-	size_t configuration_index) const {
+IntegrandValue GaussQuadrature::partial_integrate(IntegrandFunction &f, size_t configuration_index) const {
 	const IntegralConfiguration &conf = configurations[configuration_index];
 	const PhysicalDouble &b = conf.end, a = conf.start;
 	const size_t &n = conf.n;
 	if (n == 0) {
-		throw(std::invalid_argument("GaussQuadrature: Number of integration points must be positive"));
+		throw(std::invalid_argument("Number of integration points must be positive"));
 	}
 	if (n > 40) {
-		throw(std::invalid_argument("GaussQuadrature: Number of integration points larger than 40 is not implemented"));
+		throw(std::invalid_argument("Number of integration points larger than 40 not implemented"));
 	}
 
-	PhysicalDouble sum = 0;
+	IntegrandValue sum { 0, 0, 0 };
 	for (size_t k = 0; k < n; k++) {
-		sum += weights[n][k] * f(evaluation_points[configuration_index][k]);
+		auto eval = f(evaluation_points[configuration_index][k]);
+		for (size_t j = 0; j < sum.size(); j++) {
+
+			sum[j] += weights[n][k] * eval[j];
+		}
 	}
 
-	return sum * (b - a) / 2;
+	PhysicalDouble factor = (b - a) / 2;
+	for (size_t j = 0; j < sum.size(); j++) {
+		sum[j] *= factor;
+	}
+
+	return sum;
 }
 
-PhysicalDouble GaussQuadrature::integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f) const {
-	PhysicalDouble integral = 0;
+IntegrandValue GaussQuadrature::integrate(IntegrandFunction &f) const {
+	IntegrandValue integral{0,0,0};
 
 	for (size_t k = 0; k < configurations.size(); k++) {
-		integral += partial_integrate(f, k);
+		auto partial_integral = partial_integrate(f, k);
+		for(size_t j=0; j<integral.size(); j++ ){
+			//std::cout << partial_integral[j] << '\n';
+			integral[j] += partial_integral[j];
+		}
 	}
 
 	return integral;

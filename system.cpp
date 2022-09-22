@@ -103,19 +103,6 @@ StepFunction& System::Zp() {
 	return parameters[2];
 }
 
-void System::precalculate_rho_derivatives() {
-
-	V2 = V().derivative(1);
-	V3 = V().derivative(2);
-	Zs1 = Zs().derivative(1);
-	Zs2 = Zs().derivative(2);
-	Zp1 = Zp().derivative(1);
-	Zp2 = Zp().derivative(2);
-
-	rho_func = V().x_func();
-	d_inv = 1.l / d;
-}
-
 RealVector System::full_vector_representation() {
 	std::vector<PhysicalDouble> params;
 	params.insert(params.end(), V().begin(), V().end());
@@ -125,379 +112,212 @@ RealVector System::full_vector_representation() {
 	return RealVector(params);
 }
 
+void System::precalculate_rho_derivatives() {
+
+	V1 = V().derivative(1);
+	V2 = V().derivative(2);
+	Zs1 = Zs().derivative(1);
+	Zs2 = Zs().derivative(2);
+	Zp1 = Zp().derivative(1);
+	Zp2 = Zp().derivative(2);
+
+	rho_func = V().x_func();
+	d_inv = 1.l / d;
+}
+
+void System::push_time_derivative_integrals(size_t i) {
+
+	PhysicalDouble rho = rho_func[i];
+	PhysicalDouble v = V()[i], v1 = V1[i], v2 = V2[i];
+	PhysicalDouble zs = Zs()[i], zs1 = Zs1[i], zs2 = Zs2[i];
+	PhysicalDouble zp = Zp()[i], zp1 = Zp1[i], zp2 = Zp2[i];
+
+	bool singularity = false;
+	std::string error;
+	if (v1 < -a) {
+		error = "V(" + std::to_string(i) + ") = " + std::to_string(v1);
+		singularity = true;
+	} else if ((v1 + 2 * rho * v2) < -a) {
+		error = "V + 2 r V'(" + std::to_string(i) + ") = " + std::to_string((v1 + 2 * rho * v2));
+		singularity = true;
+	} else if (zs < 0) {
+		error = "Zs(" + std::to_string(i) + ") = " + std::to_string(zs);
+		singularity = true;
+	} else if (zp < 0) {
+		error = "Zp(" + std::to_string(i) + ") = " + std::to_string(zp);
+		singularity = true;
+	}
+
+	if (singularity) {
+		throw std::runtime_error("Equations contain a singular propagator " + error);
+	}
+	PhysicalDouble eta_copy = eta;
+	if (i == 0) {
+
+		PhysicalDouble f2 = zp1 + zs1;
+		auto integrands = [=](IntegrandArgument args) {
+			PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
+			PhysicalDouble pref = yd * (prefactor - eta_copy * ry);
+			PhysicalDouble g = (v + ry + y2 * zs);
+			PhysicalDouble f1 = g * g;
+
+			PhysicalDouble v_int = (-2 * (4 * v1 + f2 * y2)) / f1;
+			PhysicalDouble zs_int = (-2 * f2) / f1;
+			return std::array<PhysicalDouble, 3> { pref * v_int, pref * zs_int, pref * zs_int };
+		};
+		integrator->push_integrand_function(integrands);
+	} else {
+		PhysicalDouble f3 = 2 * rho;
+		PhysicalDouble f15 = 8 * rho;
+		PhysicalDouble f18 = 2 * d;
+		PhysicalDouble f20 = 4 + d;
+		PhysicalDouble f26 = d * v1;
+		PhysicalDouble f36 = -zp + zs;
+		PhysicalDouble f37 = zp - zs;
+		PhysicalDouble f110 = f3 * v1;
+		PhysicalDouble f111 = rho * zp1;
+		PhysicalDouble f115 = 2. * rho;
+		PhysicalDouble f151 = (zp + f111) - zs;
+
+		auto integrands = [=](IntegrandArgument args) {
+			PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rpy2 = a * args[4],
+				prefactor = a * args[5];
+			PhysicalDouble pref = yd * (prefactor - eta_copy * ry);
+			PhysicalDouble gp = v + ry + y2 * zp;
+			PhysicalDouble gs = v + 2 * rho * v1 + ry + y2 * zs;
+
+			PhysicalDouble f0 = y2 * zp1;
+			PhysicalDouble f1 = gp * gp;
+			PhysicalDouble f4 = y2 * zs1;
+			PhysicalDouble f5 = gs * gs;
+			PhysicalDouble f7 = v1 + f0;
+			PhysicalDouble f11 = ((3 * v1) + (f3 * v2)) + f4;
+			PhysicalDouble f16 = f1 * gp;
+			PhysicalDouble f17 = f5 * gs;
+			PhysicalDouble f19 = rpy + zp;
+			PhysicalDouble f23 = rpy + zs;
+			PhysicalDouble f30 = f1 * rho;
+			PhysicalDouble f38 = (32 * rho) * y2;
+			PhysicalDouble f42 = f19 * f19;
+			PhysicalDouble f50 = f23 * f23;
+			PhysicalDouble f85 = (((3 * d) * v1) + ((f18 * rho) * v2)) + (f20 * f4);
+			PhysicalDouble f109 = y2 * f36;
+			PhysicalDouble f112 = d * f1;
+			PhysicalDouble f113 = y2 * f37;
+			PhysicalDouble f114 = 8 * y2;
+			PhysicalDouble f116 = 4 * rpy2;
+			PhysicalDouble f117 = 4 * f0;
+			PhysicalDouble f130 = f110 + f109;
+			PhysicalDouble f150 = f130 * f130;
+
+			PhysicalDouble v_int = (-2 * f11) / f5 - (2 * f7) / f1;
+			PhysicalDouble zs_int = (f11 * f11 * f38 * f50) / (d * f17 * f5) + (f38 * f42 * (f7 * f7)) / (d * f1 * f16)
+				+ (f15 * f7 * (-(f19 * (f0 * f20 + f26)) - 2 * f7 * rpy2 * y2)) / (d * f16 * gp)
+				+ (8 * f36 * f7 + (f15 * y2 * (zp1 * zp1)) / d) / f16
+				- (f11 * f15 * (f85 * rpy + 2 * f11 * rpy2 * y2 + f85 * zs)) / (d * f17 * gs)
+				+ (f15 * (6 * f26 + (1 + f18) * f4 + 4 * d * rho * v2) * zs1) / (d * f17)
+				- (2 * (f37 + rho * zs1)) / f30 - (2 * (zs1 + f3 * zs2)) / f5;
+			PhysicalDouble zp_int = (f114 * f150 * f50) / (f112 * f17 * rho)
+				+ (4 * (d * (-f110 + f113) * f37 + 2 * (f151 * f151) * y2)) / (f112 * gs * rho)
+				- (2 * (f111 - zp + zs)) / f30
+				+ ((f114 * f150 * f42) / (d * f16 * rho) + (f15 * (f0 / d + f109 / rho + 2 * v1) * zp1) / gp
+					- 2 * (zp1 + f3 * zp2)
+					- (f15 * (f109 / f115 + v1)
+						* (f18 * rpy * v1 + f116 * v1 * y2 + (f117 + f26) * zp - f117 * zs + f26 * zs
+							- (f113 * (2 * f20 * rpy + f116 * y2 + d * zp + (8 + d) * zs)) / f115)) / f112) / f5;
+			return std::array<PhysicalDouble, 3> { pref * v_int, pref * zs_int, pref * zp_int };
+		};
+		integrator->push_integrand_function(integrands);
+	}
+
+}
+
 void System::find_eta() {
-	return find_eta_norm_point();
-}
-
-void System::find_eta_minimum() {
-	PhysicalDouble potential_minimum = V().kappa_u(V2).first;
-	if (potential_minimum <= std::numeric_limits<PhysicalDouble>::epsilon()) {
-		throw std::runtime_error("System: Potential minimum is out of the grid");
-	}
-	size_t norm = size_t((potential_minimum - V().domain_begin) / V().step_size);
-
-	PhysicalDouble v1 = V()(potential_minimum);
-	PhysicalDouble v2 = V2(potential_minimum);
-	PhysicalDouble v3 = V3(potential_minimum);
-	PhysicalDouble zs = Zs()(potential_minimum);
-	PhysicalDouble zs1 = Zs1(potential_minimum);
-	PhysicalDouble zs2 = Zs2(potential_minimum);
-	PhysicalDouble zp = Zp()(potential_minimum);
-	PhysicalDouble zp1 = Zp1(potential_minimum);
-	PhysicalDouble zp2 = Zp2(potential_minimum);
-	PhysicalDouble rho = potential_minimum, rho_inv = 1 / rho;
-
-	PhysicalDouble z, z1;
-	if (sigma_normalization) {
-		z = zs;
-		z1 = zs1;
-	} else {
-		z = zp;
-		z1 = zp1;
-	}
-
-	auto v_common_part = [=](PhysicalDouble y2, PhysicalDouble ry) {
-		PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-		PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-		PhysicalDouble res = -2 * pow2(gp) * (-1 + n) * (v2 + y2 * zp1)
-			- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
-		return res;
-	};
-
-	auto v_free_integrand = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
-		return prefactor * v_common_part(y2, ry) * yd;
-	};
-
-	auto v_eta_integrand = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2];
-		return ry * v_common_part(y2, ry) * yd;
-	};
-
-	auto z_common_part = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble y2 = args[0], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4];
-		if (norm == 0) {
-			PhysicalDouble g = 1 / (v1 + y2 * zp + ry);
-
-			return -2 * pow2(g) * ((-1 + n) * zp1 + zs1);
-		} else if (sigma_normalization) {
-
-			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-
-			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp, gp4 = gp2 * gp2, gp5 = gp4 * gp;
-			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
-
-			return 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
-				- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
-				+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
-				- 2 * gs2 * (zs1 + 2 * rho * zs2)
-				+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
-				- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-					* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
-				- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1) * (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y))
-					* d_inv
-				- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
-					* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-						+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
-		} else {
-			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-
-			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
-			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs;
-
-			return (2
-				* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
-					- 2 * gp2 * gs
-						* (-2 * y2 * pow2(zp + rho * zp1 - zs) + d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
-					+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
-					- gs2
-						* (d * rho * (zp1 + 2 * rho * zp2)
-							- 4 * gp * rho * zp1 * (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
-							+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
-								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
-							+ gp2
-								* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
-									+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs) * (-(rho * zp1) + zs + rpy)
-									+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y)))) * d_inv * rho_inv;
-		}
-
-	};
-
-	auto z_free_integrand = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble yd = args[1], prefactor = a * args[5];
-		return prefactor * z_common_part(args) * yd;
-	};
-
-	auto z_eta_integrand = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble yd = args[1], ry = a * args[2];
-		return ry * z_common_part(args) * yd;
-	};
-
-	integrator->reset_integrals(4);
-
-	integrator->push_integrand_function(v_free_integrand);
-	integrator->push_integrand_function(v_eta_integrand);
-	integrator->push_integrand_function(z_free_integrand);
-	integrator->push_integrand_function(z_eta_integrand);
-
-	auto results = integrator->evaluate_integrals();
-
-	PhysicalDouble v_free = (*results)[0];
-	PhysicalDouble v_eta = (*results)[1];
-	PhysicalDouble z_free = (*results)[2];
-	PhysicalDouble z_eta = (*results)[3];
-
-	PhysicalDouble free_component, eta_component;
-
-	free_component = 2 * v1 * z1 + vd * (z_free * v2 - v_free * z1);
-	eta_component = z1 * v1 - v2 * z + vd * (-v_eta * z1 + z_eta * v2);
-
-	eta = free_component / eta_component;
-}
-
-void System::find_eta_norm_point() {
-
-	PhysicalDouble v1 = V()[norm_point];
-	PhysicalDouble v2 = V2[norm_point];
-	PhysicalDouble v3 = V3[norm_point];
-	PhysicalDouble zs = Zs()[norm_point];
-	PhysicalDouble zs1 = Zs1[norm_point];
-	PhysicalDouble zs2 = Zs2[norm_point];
-	PhysicalDouble zp = Zp()[norm_point];
-	PhysicalDouble zp1 = Zp1[norm_point];
-	PhysicalDouble zp2 = Zp2[norm_point];
-	PhysicalDouble rho = rho_func[norm_point], rho_inv = 1 / rho;
-
-	PhysicalDouble z, z1;
-	if (sigma_normalization) {
-		z = zs;
-		z1 = zs1;
-	} else {
-		z = zp;
-		z1 = zp1;
-	}
-
-	auto z_common_part = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble y2 = args[0], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4];
-		if (norm_point == 0) {
-			PhysicalDouble g = 1 / (v1 + y2 * zp + ry);
-
-			return -2 * pow2(g) * ((-1 + n) * zp1 + zs1);
-		} else if (sigma_normalization) {
-
-			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-
-			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp, gp4 = gp2 * gp2, gp5 = gp4 * gp;
-			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
-
-			return 8 * gp3 * (-1 + n) * ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
-				- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
-				+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
-				- 2 * gs2 * (zs1 + 2 * rho * zs2)
-				+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
-				- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-					* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
-				- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1) * (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y))
-					* d_inv
-				- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
-					* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-						+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
-		} else {
-			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-
-			PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
-			PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs;
-
-			return (2
-				* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
-					- 2 * gp2 * gs
-						* (-2 * y2 * pow2(zp + rho * zp1 - zs) + d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
-					+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
-					- gs2
-						* (d * rho * (zp1 + 2 * rho * zp2)
-							- 4 * gp * rho * zp1 * (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
-							+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
-								* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
-							+ gp2
-								* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
-									+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs) * (-(rho * zp1) + zs + rpy)
-									+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y)))) * d_inv * rho_inv;
-		}
-
-	};
-
-	auto z_free_integrand = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble yd = args[1], prefactor = a * args[5];
-		return prefactor * z_common_part(args) * yd;
-	};
-
-	auto z_eta_integrand = [=](std::array<PhysicalDouble, 6> args) {
-		PhysicalDouble yd = args[1], ry = a * args[2];
-		return ry * z_common_part(args) * yd;
-	};
+	PhysicalDouble rho = rho_func[norm_point];
 
 	integrator->reset_integrals(2);
 
-	integrator->push_integrand_function(z_free_integrand);
-	integrator->push_integrand_function(z_eta_integrand);
+	eta = 0;
+	push_time_derivative_integrals(norm_point);
+	eta = 1;
+	push_time_derivative_integrals(norm_point);
 
 	auto results = integrator->evaluate_integrals();
 
-	PhysicalDouble z_free = (*results)[0];
-	PhysicalDouble z_eta = (*results)[1];
+	//PhysicalDouble i1 = gauss_legendre_integrate(free_integrand);
+	//PhysicalDouble i2 = gauss_legendre_integrate(eta_integrand);
 
-	PhysicalDouble free_component = (d - 2) * rho * z1 + vd * z_free;
-	PhysicalDouble eta_component = z + rho * z1 - vd * z_eta;
+	IntegrandValue i_free = (*results)[0];
+	IntegrandValue i_total = (*results)[1];
+
+	PhysicalDouble z, z1;
+	PhysicalDouble i1, i2;
+	if (sigma_normalization) {
+		i1 = i_free[1];
+		i2 = i_total[1] - i_free[1];
+		z = Zs()[norm_point];
+		z1 = Zs1[norm_point];
+	} else {
+		i1 = i_free[2];
+		i2 = i_total[2] - i_free[2];
+		z = Zp()[norm_point];
+		z1 = Zp1[norm_point];
+	}
+
+	PhysicalDouble free_component = (d - 2) * rho * z1 + vd * i1;
+	PhysicalDouble eta_component = z + rho * z1 + vd * i2;
 
 	eta = -free_component / eta_component;
+}
+
+PhysicalDouble System::time_derivative(size_t func_i, size_t rho_i, size_t integrals_position) {
+
+	PhysicalDouble integral = -vd * integrator->integral_result(integrals_position)[func_i];
+
+	PhysicalDouble scaling;
+	PhysicalDouble rho = rho_func[rho_i];
+	if (func_i == 0) {
+		scaling = (2 - eta) * V()[rho_i] - (d - 2 + eta) * rho * V1[rho_i];
+	} else if (func_i == 1) {
+		scaling = -eta * Zs()[rho_i] - (d - 2 + eta) * rho * Zs1[rho_i];
+	} else if (func_i == 2) {
+		scaling = -eta * Zp()[rho_i] - (d - 2 + eta) * rho * Zp1[rho_i];
+	} else {
+		throw std::runtime_error(
+			"System::time_derivative: Scaling for function " + std::to_string(func_i) + " not implemented");
+	}
+
+	return integral + scaling;
 }
 
 System System::time_derivative() {
 	precalculate_rho_derivatives();
 	find_eta();
 
-	integrator->reset_integrals(num_points * 3);
+	size_t num_points = V().num_points;
+	PhysicalDouble step = V().step_size;
+
+	integrator->reset_integrals(num_points);
 
 	for (size_t i = 0; i < num_points; i++) {
-		PhysicalDouble rho = rho_func[i], rho_inv = 1 / rho;
-		PhysicalDouble v1 = V()[i], v2 = V2[i], v3 = V3[i];
-		PhysicalDouble zs = Zs()[i], zs1 = Zs1[i], zs2 = Zs2[i];
-		PhysicalDouble zp = Zp()[i], zp1 = Zp1[i], zp2 = Zp2[i];
-
-		bool singularity = false;
-		std::string error;
-		if (v1 < -a) {
-			error = "V(" + std::to_string(i) + ") = " + std::to_string(v1);
-			singularity = true;
-		} else if ((v1 + 2 * rho * v2) < -a) {
-			error = "V + 2 r V'(" + std::to_string(i) + ") = " + std::to_string((v1 + 2 * rho * v2));
-			singularity = true;
-		} else if (zs < 0) {
-			error = "Zs(" + std::to_string(i) + ") = " + std::to_string(zs);
-			singularity = true;
-		} else if (zp < 0) {
-			error = "Zp(" + std::to_string(i) + ") = " + std::to_string(zp);
-			singularity = true;
-		}
-
-		if (singularity) {
-			throw std::runtime_error("System: Equations contain a singular propagator " + error);
-		}
-
-		// V flow equation
-		auto v_integrand = [=](std::array<PhysicalDouble, 6> args) {
-			PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
-			PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-			PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-			PhysicalDouble pref = prefactor - eta * ry;
-			PhysicalDouble res = -2 * pow2(gp) * (-1 + n) * (v2 + y2 * zp1)
-				- 2 * pow2(gs) * (3 * v2 + 2 * rho * v3 + y2 * zs1);
-			return yd * res * pref;
-		};
-		integrator->push_integrand_function(v_integrand);
-
-		// Zs flow equation
-		if (rho <= std::numeric_limits<PhysicalDouble>::epsilon()) {
-			auto zs_integrand = [=](std::array<PhysicalDouble, 6> args) {
-				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
-				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-				PhysicalDouble pref = prefactor - eta * ry;
-
-				PhysicalDouble res = -2 * pow2(gp) * ((-1 + n) * zp1 + zs1);
-				return yd * res * pref;
-			};
-			integrator->push_integrand_function(zs_integrand);
-		} else {
-
-			auto zs_integrand = [=](std::array<PhysicalDouble, 6> args) {
-				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4],
-					prefactor = a * args[5];
-				PhysicalDouble pref = prefactor - eta * ry;
-				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-				PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp, gp4 = gp2 * gp2, gp5 = gp4 * gp;
-				PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs, gs4 = gs2 * gs2, gs5 = gs4 * gs;
-
-				PhysicalDouble res = 8 * gp3 * (-1 + n)
-					* ((rho * y2 * pow2(zp1)) * d_inv + (v2 + y2 * zp1) * (-zp + zs))
-					- (2 * gp2 * (-1 + n) * (zp - zs + rho * zs1)) * rho_inv
-					+ (8 * gs3 * rho * zs1 * (y2 * zs1 + 2 * d * (3 * v2 + 2 * rho * v3 + y2 * zs1))) * d_inv
-					- 2 * gs2 * (zs1 + 2 * rho * zs2)
-					+ (32 * gs5 * rho * y2 * pow2(3 * v2 + 2 * rho * v3 + y2 * zs1) * pow2(zs + rpy)) * d_inv
-					- (8 * gp5 * (-1 + n) * rho * pow2(v2 + y2 * zp1) * (zp + rpy)
-						* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)) * d_inv
-					- (16 * gp4 * (-1 + n) * rho * y2 * (v2 + y2 * zp1)
-						* (2 * zp1 * (zp + rpy) + (v2 + y2 * zp1) * rp2y)) * d_inv
-					- (8 * gs4 * rho * (3 * v2 + 2 * rho * v3 + y2 * zs1)
-						* ((3 * d * v2 + 2 * d * rho * v3 + (4 + d) * y2 * zs1) * (zs + rpy)
-							+ 2 * y2 * (3 * v2 + 2 * rho * v3 + y2 * zs1) * rp2y)) * d_inv;
-				return yd * res * pref;
-			};
-
-			integrator->push_integrand_function(zs_integrand);
-		}
-
-		//Zp flow equation
-		if (rho <= std::numeric_limits<PhysicalDouble>::epsilon()) {
-			auto zp_integrand = [=](std::array<PhysicalDouble, 6> args) {
-				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], prefactor = a * args[5];
-				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-				PhysicalDouble pref = prefactor - eta * ry;
-
-				PhysicalDouble res = -2 * pow2(gp) * ((-1 + n) * zp1 + zs1);
-				return yd * res * pref;
-			};
-
-			integrator->push_integrand_function(zp_integrand);
-		} else {
-			auto zp_integrand = [=](std::array<PhysicalDouble, 6> args) {
-				PhysicalDouble y2 = args[0], yd = args[1], ry = a * args[2], rpy = a * args[3], rp2y = a * args[4],
-					prefactor = a * args[5];
-				PhysicalDouble gp = 1 / (v1 + y2 * zp + ry);
-				PhysicalDouble gs = 1 / (v1 + 2 * rho * v2 + y2 * zs + ry);
-				PhysicalDouble gp2 = gp * gp, gp3 = gp2 * gp;
-				PhysicalDouble gs2 = gs * gs, gs3 = gs2 * gs;
-				PhysicalDouble pref = prefactor - eta * ry;
-
-				PhysicalDouble res = (2
-					* (d * gp2 * (zp + rho * (zp1 - n * zp1) - zs)
-						- 2 * gp2 * gs
-							* (-2 * y2 * pow2(zp + rho * zp1 - zs) + d * (zp - zs) * (2 * rho * v2 + y2 * (-zp + zs)))
-						+ 4 * gp2 * gs3 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * pow2(zs + rpy)
-						- gs2
-							* (d * rho * (zp1 + 2 * rho * zp2)
-								- 4 * gp * rho * zp1 * (2 * d * rho * v2 + rho * y2 * zp1 + d * y2 * (-zp + zs))
-								+ gp3 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zp + rpy)
-									* (d * v1 + (-4 + d) * y2 * zp + d * ry - 4 * y2 * rpy)
-								+ gp2
-									* (d * pow2(2 * rho * v2 + y2 * (-zp + zs)) * (zs + rpy)
-										+ 8 * y2 * (-2 * rho * v2 + y2 * (zp - zs)) * (zp - zs)
-											* (-(rho * zp1) + zs + rpy)
-										+ 4 * y2 * pow2(2 * rho * v2 + y2 * (-zp + zs)) * rp2y)))) * d_inv * rho_inv;
-				return res * pref * yd;
-			};
-			integrator->push_integrand_function(zp_integrand);
-		}
+		push_time_derivative_integrals(i);
 	}
 	auto integrals = integrator->evaluate_integrals();
 
 	std::vector<PhysicalDouble> v_vals(num_points), zs_vals(num_points), zp_vals(num_points);
 	for (size_t i = 0; i < num_points; i++) {
-		v_vals[i] = (*integrals)[3 * i];
-		zs_vals[i] = (*integrals)[3 * i + 1];
-		zp_vals[i] = (*integrals)[3 * i + 2];
+		auto &&res = (*integrals)[i];
+		v_vals[i] = res[0];
+		zs_vals[i] = res[1];
+		zp_vals[i] = res[2];
 	}
 
-	StepFunction v_der = (2 - eta) * V() - (d - 2 + eta) * rho_func * V2
-		- vd * StepFunction(step_size, v_vals, V().domain_begin);
+	StepFunction v_der = (2 - eta) * V() - (d - 2 + eta) * rho_func * V1
+		- vd * StepFunction(step, v_vals, V().domain_begin);
 	StepFunction zs_der = -eta * Zs() - (d - 2 + eta) * rho_func * Zs1
-		- vd * StepFunction(step_size, zs_vals, V().domain_begin);
+		- vd * StepFunction(step, zs_vals, V().domain_begin);
 	StepFunction zp_der = -eta * Zp() - (d - 2 + eta) * rho_func * Zp1
-		- vd * StepFunction(step_size, zp_vals, V().domain_begin);
+		- vd * StepFunction(step, zp_vals, V().domain_begin);
 
 	System derivative = *this;
 	derivative.parameters = std::vector<StepFunction>();
@@ -505,8 +325,6 @@ System System::time_derivative() {
 	derivative.parameters.push_back(zs_der);
 	derivative.parameters.push_back(zp_der);
 	derivative.eta = eta;
-
-	beta_squared = derivative.full_vector_representation().norm();
 
 	return derivative;
 }
@@ -690,10 +508,6 @@ System& System::operator*=(PhysicalDouble rhs) {
 	return *this;
 }
 
-PhysicalDouble System::gauss_legendre_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f) {
-	return integrator->GLIntegrator.integrate(f);
-}
-
 System operator+(System lhs, System rhs) {
 	lhs += rhs;
 	return lhs;
@@ -708,8 +522,8 @@ std::ostream& operator<<(std::ostream &out, System s) {
 	out << "Rho,V,Zs,Zp,V1,Zs1,Zp1,V2,Zs2,Zp2\n";
 	s.precalculate_rho_derivatives();
 	for (size_t i = 0; i < s.V().num_points; i++) {
-		out << s.V().x_func()[i] << ',' << s.V()[i] << ',' << s.Zs()[i] << ',' << s.Zp()[i] << ',' << s.V2[i] << ','
-			<< s.Zs1[i] << ',' << s.Zp1[i] << ',' << s.V3[i] << ',' << s.Zs2[i] << ',' << s.Zp2[i] << '\n';
+		out << s.V().x_func()[i] << ',' << s.V()[i] << ',' << s.Zs()[i] << ',' << s.Zp()[i] << ',' << s.V1[i] << ','
+			<< s.Zs1[i] << ',' << s.Zp1[i] << ',' << s.V2[i] << ',' << s.Zs2[i] << ',' << s.Zp2[i] << '\n';
 	}
 
 	return out;

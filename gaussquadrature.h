@@ -7,6 +7,10 @@
 #include <cstdlib>
 #include "realvector.h"
 
+typedef std::array<PhysicalDouble, 3> IntegrandValue;
+typedef std::array<PhysicalDouble, 6> IntegrandArgument;
+typedef std::function<IntegrandValue(IntegrandArgument)> IntegrandFunction;
+
 class IntegralConfiguration {
 public:
 	IntegralConfiguration(PhysicalDouble start, PhysicalDouble end, size_t n);
@@ -18,15 +22,14 @@ class GaussQuadrature {
 public:
 	GaussQuadrature();
 	GaussQuadrature(PhysicalDouble d);
-	PhysicalDouble partial_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f,
-		size_t configuration_index) const;
-	PhysicalDouble integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> &f) const;
+	IntegrandValue partial_integrate(IntegrandFunction &f, size_t configuration_index) const;
+	IntegrandValue integrate(IntegrandFunction &f) const;
 
 private:
 	std::array<std::array<PhysicalDouble, 41>, 41> roots;
 	std::array<std::array<PhysicalDouble, 41>, 41> weights;
 	std::vector<IntegralConfiguration> configurations;
-	std::vector<std::vector<std::array<PhysicalDouble, 6> > > evaluation_points;
+	std::vector<std::vector<IntegrandArgument> > evaluation_points;
 
 	PhysicalDouble d;
 };

@@ -13,9 +13,31 @@
 #include "rungekutta.h"
 #include "terminalplot.h"
 
-Task::Task(Integrator *integrator, std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand,
-	PhysicalDouble *result) :
+Task::Task(Integrator *integrator, IntegrandFunction *integrand,
+	IntegrandValue *result) :
 	integrator(integrator), integrand(integrand), result(result) {
+}
+
+void executeTasks(Integrator *integrator) {
+	while (true) {
+		std::unique_lock<std::mutex> lock(integrator->tasks_mutex);
+		while (integrator->tasks.empty()) {
+			integrator->tasks_not_empty.wait(lock);
+		}
+		Task *task = integrator->tasks.front();
+		integrator->tasks.pop();
+		lock.unlock();
+		if (task->shutdown) {
+			return;
+		}
+		integrate(task, integrator);
+		lock.lock();
+		integrator->active_tasks_count--;
+		if (integrator->active_tasks_count == 0) {
+			integrator->all_tasks_done.notify_one();
+		}
+		lock.unlock();
+	}
 }
 
 Integrator::Integrator(std::vector<std::string> arg, size_t num_threads) :
@@ -197,7 +219,7 @@ void Integrator::save_snapshots(std::string file) {
 	return;
 }
 
-void Integrator::push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f) {
+void Integrator::push_integrand_function(IntegrandFunction f) {
 	integrand_functions.push_back(f);
 }
 
@@ -208,9 +230,9 @@ void Integrator::reset_integrals(size_t new_size) {
 	}
 }
 
-std::vector<PhysicalDouble>* Integrator::evaluate_integrals() {
+std::vector<IntegrandValue>* Integrator::evaluate_integrals() {
 	size_t task_count = integrand_functions.size();
-	integral_values = std::vector<PhysicalDouble>(task_count);
+	integral_values = std::vector<IntegrandValue>(task_count);
 //
 //	for (size_t i = 0; i < task_count; i++) {
 //		integral_values[i] = GLIntegrator.integrate(integrand_functions[i]);
@@ -234,29 +256,14 @@ std::vector<PhysicalDouble>* Integrator::evaluate_integrals() {
 	return &integral_values;
 }
 
+IntegrandValue Integrator::integral_result(size_t i) {
+	if (i >= integral_values.size()) {
+		throw std::invalid_argument("Integrator: requested value out of scope of integral_values vector");
+	}
+	return integral_values[i];
+}
+
+
 void integrate(Task *task, Integrator *integrator) {
 	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));
 }
-
-void executeTasks(Integrator *integrator) {
-	while (true) {
-		std::unique_lock<std::mutex> lock(integrator->tasks_mutex);
-		while (integrator->tasks.empty()) {
-			integrator->tasks_not_empty.wait(lock);
-		}
-		Task *task = integrator->tasks.front();
-		integrator->tasks.pop();
-		lock.unlock();
-		if (task->shutdown) {
-			return;
-		}
-		integrate(task, integrator);
-		lock.lock();
-		integrator->active_tasks_count--;
-		if (integrator->active_tasks_count == 0) {
-			integrator->all_tasks_done.notify_one();
-		}
-		lock.unlock();
-	}
-}
-

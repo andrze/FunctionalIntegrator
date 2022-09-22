@@ -63,12 +63,12 @@ public:
 	StepFunction& Zs();
 	StepFunction& Zp();
 	RealVector full_vector_representation();
-	StepFunction rho_func, V2, V3, Zs1, Zs2, Zp1, Zp2;
+	StepFunction rho_func, V1, V2, Zs1, Zs2, Zp1, Zp2;
 	void precalculate_rho_derivatives();
 
 	void find_eta();
-	void find_eta_minimum();
-	void find_eta_norm_point();
+	void push_time_derivative_integrals(size_t i);
+	PhysicalDouble time_derivative(size_t func_i, size_t rho_i, size_t integrals_position);
 	System time_derivative();
 
 	void rescale();
@@ -86,8 +86,6 @@ public:
 	System& operator+=(System rhs);
 	System& operator*=(PhysicalDouble rhs);
 
-	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(PhysicalDouble)> f);
-	PhysicalDouble gauss_legendre_integrate(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f);
 };
 
 System operator+(System lhs, System rhs);

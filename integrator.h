@@ -23,11 +23,10 @@
 #include "realvector.h"
 
 struct Task {
-	Task(Integrator *integrator, std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand,
-		PhysicalDouble *result);
+	Task(Integrator *integrator, IntegrandFunction *integrand, IntegrandValue *result);
 	class Integrator *integrator;
-	std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> *integrand;
-	PhysicalDouble *result;
+	IntegrandFunction *integrand;
+	IntegrandValue *result;
 	bool shutdown = false;
 };
 
@@ -62,13 +61,14 @@ public:
 
 	GaussQuadrature GLIntegrator;
 
-	void push_integrand_function(std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> f);
+	void push_integrand_function(IntegrandFunction f);
 	void reset_integrals(size_t new_size = 0);
-	std::vector<PhysicalDouble>* evaluate_integrals();
+	std::vector<IntegrandValue>* evaluate_integrals();
+	IntegrandValue integral_result(size_t i);
 
 private:
-	std::vector<std::function<PhysicalDouble(std::array<PhysicalDouble, 6>)> > integrand_functions; //vector of integrals to be carried out
-	std::vector<PhysicalDouble> integral_values; //vector of results of the integrals
+	std::vector<IntegrandFunction> integrand_functions; //vector of integrals to be carried out
+	std::vector<IntegrandValue> integral_values; //vector of results of the integrals
 	std::vector<std::thread> threads; //vector of threads working on assigned tasks
 	std::vector<std::unique_ptr<std::thread> > workers;
 
