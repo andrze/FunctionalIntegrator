@@ -18,7 +18,7 @@ public:
 	size_t num_points = 0;
 	std::vector<PhysicalDouble> xs();
 	StepFunction x_func();
-	size_t num_points_derivatives;
+	size_t num_points_derivatives = 0;
 
 	PhysicalDouble& operator[](size_t i);
 	PhysicalDouble operator()(PhysicalDouble x);
@@ -35,6 +35,7 @@ public:
 	std::pair<PhysicalDouble, PhysicalDouble> minmax();
 
 	std::vector<PhysicalDouble>::iterator begin(), end();
+	std::vector<PhysicalDouble> vals_copy();
 
 private:
 	std::vector<PhysicalDouble> vals;

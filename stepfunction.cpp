@@ -51,7 +51,7 @@ const std::vector<PhysicalDouble> DER4_SEMISEMISEMIBORDER_COEFFICIENTS = { -11.l
 const std::vector<PhysicalDouble> DER4_CENTRAL_COEFFICIENTS = { 7.l / 240, -2.l / 5, 169.l / 60, -122.l / 15, 91.l / 8,
 	-122.l / 15, 169.l / 60, -2.l / 5, 7.l / 240 };
 
-const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_CENTRAL_COEFFICIENTS, DER1_BORDER_COEFFICIENTS,
+const std::vector<std::vector<PhysicalDouble> > ALL_COEFFS { DER1_CENTRAL_COEFFICIENTS, DER1_BORDER_COEFFICIENTS,
 	DER1_SEMIBORDER_COEFFICIENTS, DER1_SEMISEMIBORDER_COEFFICIENTS, DER1_SEMISEMISEMIBORDER_COEFFICIENTS,
 	DER2_CENTRAL_COEFFICIENTS, DER2_BORDER_COEFFICIENTS, DER2_SEMIBORDER_COEFFICIENTS, DER2_SEMISEMIBORDER_COEFFICIENTS,
 	DER2_SEMISEMISEMIBORDER_COEFFICIENTS, DER3_CENTRAL_COEFFICIENTS, DER3_BORDER_COEFFICIENTS,
@@ -60,8 +60,7 @@ const std::vector<std::vector<PhysicalDouble> > ALL_COEFS { DER1_CENTRAL_COEFFIC
 	DER4_SEMISEMISEMIBORDER_COEFFICIENTS };
 
 StepFunction::StepFunction() {
-	num_points_derivatives = 0;
-	for (auto &&c : ALL_COEFS) {
+	for (auto &&c : ALL_COEFFS) {
 		num_points_derivatives = std::max(num_points_derivatives, c.size());
 	}
 }
@@ -72,8 +71,7 @@ StepFunction::StepFunction(PhysicalDouble step_size, std::vector<PhysicalDouble>
 	vals = y;
 	num_points = vals.size();
 
-	num_points_derivatives = 0;
-	for (auto &&c : ALL_COEFS) {
+	for (auto &&c : ALL_COEFFS) {
 		num_points_derivatives = std::max(num_points_derivatives, c.size());
 	}
 }
@@ -88,8 +86,7 @@ StepFunction::StepFunction(PhysicalDouble step_size, size_t num_points,
 	}
 	this->num_points = num_points;
 
-	num_points_derivatives = 0;
-	for (auto &&c : ALL_COEFS) {
+	for (auto &&c : ALL_COEFFS) {
 		num_points_derivatives = std::max(num_points_derivatives, c.size());
 	}
 }
@@ -400,6 +397,11 @@ StepFunction StepFunction::zoom_in(PhysicalDouble begin, PhysicalDouble end) {
 }
 
 StepFunction StepFunction::cut_domain(size_t begin, size_t end) {
+	if (end <= begin) {
+		throw std::invalid_argument(
+			"StepFunction: Cutting domain to an invalid range [" + std::to_string(begin) + ":" + std::to_string(end)
+				+ "].");
+	}
 	std::vector<PhysicalDouble> new_vals(vals.begin() + int(begin), vals.begin() + int(end));
 
 	PhysicalDouble new_domain_begin = domain_begin + step_size * int(begin);
@@ -444,7 +446,6 @@ const std::pair<PhysicalDouble, PhysicalDouble> StepFunction::kappa_u() {
 		}
 
 		if (std::abs(x_upper - x_lower) < THRESHOLD) {
-			std::cout << i << '\n';
 			break;
 		}
 	}
@@ -462,7 +463,10 @@ const std::pair<PhysicalDouble, PhysicalDouble> StepFunction::kappa_u(StepFuncti
 	const size_t MAX_ITERATIONS = 100;
 	const PhysicalDouble THRESHOLD = 1e-18;
 
-	if ((*this)(x_lower) > 0 || (*this)(x_upper) < 0) {
+	if ((*this)(x_lower) > 0) {
+		return {0, der(domain_begin)};
+	}
+	if ((*this)(x_upper) < 0) {
 		return {-1, -1};
 	}
 	PhysicalDouble damping = .001;
@@ -498,6 +502,10 @@ std::vector<PhysicalDouble>::iterator StepFunction::begin() {
 
 std::vector<PhysicalDouble>::iterator StepFunction::end() {
 	return vals.end();
+}
+
+std::vector<PhysicalDouble> StepFunction::vals_copy() {
+	return vals;
 }
 
 StepFunction operator+(StepFunction lhs, StepFunction rhs) {
