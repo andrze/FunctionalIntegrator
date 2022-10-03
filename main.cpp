@@ -1,6 +1,7 @@
 //#define _GNU_SOURCE
 #include <fenv.h>
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <chrono>
 #include "realvector.h"
@@ -43,9 +44,14 @@ int main(int argc, char *argv[]) {
 
 	std::string task = std::string(argv[1]); // First command line argument reserved for task specification
 	if (task == "single") {
-		std::cout << integrator.system.print_configuration();
+		std::cout << "Running single flow integration\n";
+		std::cout << "Flow configuration " << integrator.system.print_configuration() << '\n';
 		integrator.integrate(verbose);
+		auto snaps = integrator.snapshots;
+		//std::cout << std::setprecision(10);
+		//std::cout << snaps[snaps.size() - 6].time_derivative() << '\n';
 	} else if (task == "critical") {
+		std::cout << "Searching for the critical temperature.\n";
 		integrator.find_criticality();
 	} else {
 		std::cerr << "Program requires a supported task name as the first argument\n";
@@ -56,7 +62,8 @@ int main(int argc, char *argv[]) {
 
 	auto end = std::chrono::steady_clock::now();
 	int seconds = std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
-	std::cout << "Calculations lasted for " << seconds/3600 <<":"<< (seconds%3600)/60 << ":" << (seconds%60) << ".\n";
+	std::cout << "Calculations lasted for " << seconds / 3600 << ":" << (seconds % 3600) / 60 << ":" << (seconds % 60)
+		<< ".\n";
 
 	return 0;
 }
