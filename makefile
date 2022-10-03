@@ -1,7 +1,7 @@
 ODIR=obj
 CXX=g++
-CXXFLAGS= -std=c++11 -Wall -pedantic 
-CFLAGS=-I. -std=c++11 -Wall -pedantic
+CXXFLAGS= -std=c++17 -Wall -pedantic 
+CFLAGS=-I. -std=c++17 -Wall -pedantic
 
 all: executable
 
