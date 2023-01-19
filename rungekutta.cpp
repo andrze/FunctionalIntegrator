@@ -60,8 +60,9 @@ void ButcherTable::runge_kutta_step(System &initial) const {
 		throw std::runtime_error("ButcherTable: Runge-Kutta method not properly initialized");
 	}
 	PhysicalDouble h = initial.delta_t;
-	bool adaptive_step = embedded && h > delta_cutoff;
-	std::vector<System> derivatives;
+	bool adaptive_step = embedded && h > low_delta_cutoff;
+	std::vector<SystemDelta> derivatives;
+	std::vector<PhysicalDouble> etas;
 	derivatives.reserve(a.size());
 	for (size_t i = 0; i < a.size(); i++) {
 		System point = initial;
@@ -71,20 +72,22 @@ void ButcherTable::runge_kutta_step(System &initial) const {
 		}
 		if (i == 0) { // The point of this if statement is to execute time_derivative on System& initial
 			derivatives.push_back(initial.time_derivative());
+			etas.push_back(initial.eta);
 		} else {
 			derivatives.push_back(point.time_derivative());
+			etas.push_back(point.eta);
 		}
 	}
-	System total_der = b[0] * derivatives[0];
-	System truncation_err;
+	SystemDelta total_der = b[0] * derivatives[0];
+	SystemDelta truncation_err;
 
 	if (adaptive_step) {
 		truncation_err = b_trunc[0] * derivatives[0];
 	}
-	PhysicalDouble z_der = b[0] * derivatives[0].eta;
+	PhysicalDouble z_der = b[0] * etas[0];
 	for (size_t i = 1; i < b.size(); i++) {
 		total_der += b[i] * derivatives[i];
-		z_der += b[i] * derivatives[i].eta;
+		z_der += b[i] * etas[i];
 		if (adaptive_step) {
 			truncation_err += b_trunc[i] * derivatives[i];
 		}
@@ -92,15 +95,25 @@ void ButcherTable::runge_kutta_step(System &initial) const {
 
 	PhysicalDouble h_new = 0;
 	if (adaptive_step) {
-		PhysicalDouble trunc_error_norm = h * truncation_err.full_vector_representation().norm();
-		h_new = 0.9l * h * std::pow(error_tolerance / trunc_error_norm, 0.2l);
-		if (h_new < delta_cutoff) {
-			h_new = delta_cutoff;
+		RealVector truncation_error_vector = truncation_err.vector_representation(),
+			initial_vector = initial.full_vector_representation();
+		PhysicalDouble trunc_error = 0;
+		for(size_t i=0; i < truncation_error_vector.size(); i++){
+			if(std::abs(initial_vector[i]) > 1e+2 ){
+				trunc_error += std::pow(truncation_error_vector[i]/initial_vector[i],2);
+			} else {
+				trunc_error += std::pow(truncation_error_vector[i],2);
+			}
+		}
+		trunc_error = h * std::sqrt(trunc_error/truncation_error_vector.size());
+		h_new = 0.9l * h * std::pow(error_tolerance / trunc_error, 0.2l);
+		if (h_new < low_delta_cutoff) {
+			h_new = low_delta_cutoff;
 			std::cout << "Could not reach expected precision with adaptive step, defaulting to minimum allowed step "
-				<< std::scientific << delta_cutoff << std::fixed << std::endl;
+				<< std::scientific << low_delta_cutoff << std::fixed << std::endl;
 		}
 
-		if (trunc_error_norm > error_tolerance) {
+		if (trunc_error > error_tolerance) {
 			initial.delta_t = h_new;
 			runge_kutta_step(initial);
 			return;

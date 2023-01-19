@@ -13,8 +13,7 @@
 #include "rungekutta.h"
 #include "terminalplot.h"
 
-Task::Task(Integrator *integrator, IntegrandFunction *integrand,
-	IntegrandValue *result) :
+Task::Task(Integrator *integrator, IntegrandFunction *integrand, IntegrandValue *result) :
 	integrator(integrator), integrand(integrand), result(result) {
 }
 
@@ -112,25 +111,35 @@ int Integrator::integrate(bool verbose) {
 	snapshots.push_back(system);
 
 	PhysicalDouble log_time_interval = .1, next_log = 0;
-
+	SystemDelta previous_beta = system.beta_function;
 
 	for (size_t i = 0; i < max_steps && system.time < max_time; i++) {
 		PhysicalDouble time = system.time;
 		if (std::abs(time - next_log) < system.delta_t) {
+			auto  kappa_u_z = system.kappa_u_z();
 			std::cout << "Step " << i;
-			std::cout << std::setprecision(2) << ", t " << system.time;
-			std::cout << ", eta "<< std::setprecision(4) << system.eta;
-			std::cout << ", rho0 "<< std::setprecision(4) << system.kappa_u_z()[0];
-			std::cout << ", delta_t " << std::scientific  << std::setprecision(1) << system.delta_t << '\n';
 			std::cout << std::fixed;
-			if (verbose) {
-				system.plot_parameters();
+			std::cout << std::setprecision(2) << ", t " << next_log;
+			std::cout << std::setprecision(3) << ", eta " << system.eta;
+			std::cout << ", rho0 " << kappa_u_z[0];
+			if(system.d == 2){
+				std::cout << ", stiffness " <<  2*kappa_u_z[0]*kappa_u_z[2];
+			}
+			std::cout << ", delta_t " << std::scientific << std::setprecision(1) << system.delta_t;
+			std::cout << ", beta2 " << std::scientific << std::setprecision(1) << system.beta_squared << '\n';
+			std::cout << std::defaultfloat << std::setprecision(6);
+			if (verbose && i > 0) {
+//				system.plot_parameters();
+				system.scaling_coefficients.plot_parameters();
 			}
 			next_log += log_time_interval;
 		}
 		try {
+			PhysicalDouble previous_delta = system.delta_t;
 			runge_kutta_method.runge_kutta_step(system);
+			system.scaling_coefficients = (-1 / previous_delta) * (previous_beta / system.beta_function - 1);
 			system.cut_domain();
+			previous_beta = system.beta_function;
 
 		} catch (const std::runtime_error &err) {
 			std::cout << err.what() << "\n";
@@ -149,7 +158,8 @@ int Integrator::integrate(bool verbose) {
 			}
 		}
 
-		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.1 || time + system.delta_t > max_time) {
+		if (snapshots.size() == 0 || time_eta_distance(system, snapshots[snapshots.size() - 1]) > 0.1
+			|| time + system.delta_t > max_time) {
 			snapshots.push_back(system);
 		}
 
@@ -177,12 +187,13 @@ void Integrator::find_criticality() {
 			auto V = system.V();
 			size_t num_of_negative = 0;
 			size_t snap_size = snapshots.size();
-			PhysicalDouble eta1 = snapshots[snap_size-2].eta, eta2 = snapshots[snap_size-1].eta;
-			PhysicalDouble t1 = snapshots[snap_size-2].time, t2 = snapshots[snap_size-1].time;
-			PhysicalDouble rho01 = snapshots[snap_size-2].kappa_u_z()[0], rho02 = snapshots[snap_size-1].kappa_u_z()[0];
+			PhysicalDouble eta1 = snapshots[snap_size - 2].eta, eta2 = snapshots[snap_size - 1].eta;
+			PhysicalDouble t1 = snapshots[snap_size - 2].time, t2 = snapshots[snap_size - 1].time;
+			PhysicalDouble rho01 = snapshots[snap_size - 2].kappa_u_z()[0], rho02 =
+				snapshots[snap_size - 1].kappa_u_z()[0];
 
 			//if(snapshots.back().time > 10 && std::abs(snapshots[snap_size-2].eta - snapshots[snap_size-1].eta)<0.05){
-			if(std::abs((eta2-eta1)/(t2-t1)) < .2 && std::abs((rho02-rho01)/(t2-t1)) < .2){
+			if (std::abs((eta2 - eta1) / (t2 - t1)) < .2 && std::abs((rho02 - rho01) / (t2 - t1)) < .2) {
 				std::cout << "Simulation terminated in an algebraic phase (probably)\n";
 				kappa_max = system.kappa;
 			} else {
@@ -277,7 +288,6 @@ IntegrandValue Integrator::integral_result(size_t i) {
 	}
 	return integral_values[i];
 }
-
 
 void integrate(Task *task, Integrator *integrator) {
 	*(task->result) = integrator->GLIntegrator.integrate(*(task->integrand));

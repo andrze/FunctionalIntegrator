@@ -28,7 +28,7 @@ public:
 	std::vector<PhysicalDouble> b_trunc;
 	void runge_kutta_step(System &initial) const;
 	bool usable = false;
-	PhysicalDouble error_tolerance=1e-16, delta_cutoff = 1e-6;
+	PhysicalDouble error_tolerance=1e-14, low_delta_cutoff = 1e-5; //LPA test
 
 };
 

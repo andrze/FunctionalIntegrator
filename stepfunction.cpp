@@ -492,8 +492,20 @@ const std::pair<PhysicalDouble, PhysicalDouble> StepFunction::kappa_u(StepFuncti
 }
 
 std::pair<PhysicalDouble, PhysicalDouble> StepFunction::minmax() {
-	auto mini_maxi = std::minmax_element(vals.begin(), vals.end());
-	return std::make_pair(*(mini_maxi.first), *(mini_maxi.second));
+	PhysicalDouble min = std::numeric_limits<PhysicalDouble>::infinity(), max = -min;
+
+	for (auto &&v : vals) {
+		if (!std::isnan(v)) {
+			if (v < min) {
+				min = v;
+			}
+			if (v > max) {
+				max = v;
+			}
+		}
+	}
+
+	return std::make_pair(min, max);
 }
 
 std::vector<PhysicalDouble>::iterator StepFunction::begin() {

@@ -8,6 +8,28 @@
 
 class Integrator;
 
+class SystemDelta {
+public:
+	SystemDelta();
+	SystemDelta(std::vector<StepFunction> parameters);
+	size_t num_functions();
+	RealVector vector_representation();
+
+	StepFunction& operator[](size_t i);
+	SystemDelta& operator+=(SystemDelta rhs);
+	SystemDelta& operator*=(PhysicalDouble rhs);
+
+	void plot_parameters();
+
+private:
+	std::vector<StepFunction> parameters;
+};
+
+SystemDelta operator+(SystemDelta lhs, SystemDelta rhs);
+SystemDelta operator-(SystemDelta lhs, PhysicalDouble rhs);
+SystemDelta operator*(PhysicalDouble lhs, SystemDelta rhs);
+SystemDelta operator/(SystemDelta lhs, SystemDelta rhs);
+
 class System {
 public:
 	System();
@@ -57,7 +79,8 @@ public:
 	void find_eta();
 	void push_time_derivative_integrals(size_t i);
 	PhysicalDouble time_derivative(size_t func_i, size_t rho_i, size_t integrals_position);
-	System time_derivative();
+	SystemDelta time_derivative();
+	SystemDelta beta_function, scaling_coefficients;
 
 	void rescale();
 	void zoom_in();
@@ -71,21 +94,18 @@ public:
 	std::array<PhysicalDouble, 3> kappa_u_z();
 	std::string print_configuration();
 
-	System& operator+=(System rhs);
-	System& operator*=(PhysicalDouble rhs);
-
 	PhysicalDouble y_step = 0.05, y_max = 4;
 	void cache_regulator();
 	std::vector<PhysicalDouble> cached_regulator_vals;
 
 	void plot_parameters();
 
+	System& operator+=(SystemDelta rhs);
+
 private:
 	std::vector<StepFunction> parameters;
 };
 
-System operator+(System lhs, System rhs);
-System operator*(PhysicalDouble lhs, System rhs);
 PhysicalDouble time_eta_distance(System lhs, System rhs);
 
 std::ostream& operator<<(std::ostream &out, System s);

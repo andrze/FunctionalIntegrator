@@ -9,6 +9,7 @@
 #include <limits>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 #include "realvector.h"
 
 TerminalPlot::TerminalPlot() {
@@ -25,15 +26,20 @@ void TerminalPlot::plot(std::vector<StepFunction> functions) {
 
 	PhysicalDouble min = std::numeric_limits<PhysicalDouble>::max(), max = -std::numeric_limits<PhysicalDouble>::min();
 
-	for (auto &&f : functions) {
-		auto minmax = f.minmax();
+	if(fixed_range){
+		min = min_val;
+		max = max_val;
+	} else {
+		for (auto &&f : functions) {
+			auto minmax = f.minmax();
 
-		min = std::min(minmax.first, min);
-		max = std::max(minmax.second, max);
+			min = std::min(minmax.first, min);
+			max = std::max(minmax.second, max);
+		}
+
+		min = std::max(min, min_val);
+		max = std::min(max, max_val);
 	}
-
-	min = std::max(min, min_val);
-	max = std::min(max, max_val);
 
 	std::vector<PhysicalDouble> x_vals = functions.front().xs();
 
@@ -49,6 +55,9 @@ void TerminalPlot::plot(std::vector<StepFunction> functions) {
 		double x = x_start + x_unit * j;
 		for (int i = 0; i < int(functions.size()); i++) {
 			double val = functions[size_t(i)](x);
+			if(std::isnan(val)){
+				continue;
+			}
 			int pos = static_cast<size_t>((val - min) / y_unit);
 			if (pos < 0 || pos >= height) {
 				continue;

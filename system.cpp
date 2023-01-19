@@ -13,6 +13,81 @@
 #include "numericalmethods.h"
 #include "terminalplot.h"
 
+SystemDelta::SystemDelta() {
+
+}
+
+SystemDelta::SystemDelta(std::vector<StepFunction> parameters) :
+	parameters(parameters) {
+
+}
+
+size_t SystemDelta::num_functions() {
+	return parameters.size();
+}
+
+RealVector SystemDelta::vector_representation() {
+	std::vector<PhysicalDouble> params;
+	for (size_t i = 0; i < num_functions(); i++) {
+		params.insert(params.end(), parameters[i].begin(), parameters[i].end());
+	}
+	return RealVector(params);
+}
+
+StepFunction& SystemDelta::operator[](size_t i) {
+	return parameters[i];
+}
+
+void SystemDelta::plot_parameters() {
+	TerminalPlot plot;
+	plot.min_val = -.1;
+	plot.max_val = .1;
+	plot.fixed_range = true;
+	plot.plot(parameters);
+}
+
+SystemDelta& SystemDelta::operator+=(SystemDelta rhs) {
+	if (num_functions() != rhs.num_functions()) {
+		throw std::invalid_argument("System: Adding systems with different numbers of functions");
+	}
+
+	for (size_t i = 0; i < num_functions(); i++) {
+		parameters[i] = parameters[i] + rhs[i];
+	}
+	return *this;
+}
+
+SystemDelta& SystemDelta::operator*=(PhysicalDouble rhs) {
+	for (size_t i = 0; i < num_functions(); i++) {
+		parameters[i] = parameters[i] * rhs;
+	}
+	return *this;
+}
+
+SystemDelta operator+(SystemDelta lhs, SystemDelta rhs) {
+	lhs += rhs;
+	return lhs;
+}
+
+SystemDelta operator-(SystemDelta lhs, PhysicalDouble rhs) {
+	for (size_t i = 0; i < lhs.num_functions(); i++) {
+		lhs[i] = lhs[i] - rhs;
+	}
+	return lhs;
+}
+
+SystemDelta operator*(PhysicalDouble lhs, SystemDelta rhs) {
+	rhs *= lhs;
+	return rhs;
+}
+
+SystemDelta operator/(SystemDelta lhs, SystemDelta rhs) {
+	for (size_t i = 0; i < lhs.num_functions(); i++) {
+		lhs[i] = lhs[i] / rhs[i];
+	}
+	return lhs;
+}
+
 System::System() {
 }
 
@@ -27,7 +102,6 @@ System::System(Integrator *integrator, StepFunction V, PhysicalDouble delta_t, P
 	parameters.push_back(StepFunction(V.step_size, V.num_points, [](PhysicalDouble) {
 		return 1;
 	}));
-	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 
 }
 
@@ -64,7 +138,6 @@ System::System(Integrator *integrator, std::vector<std::string> configuration, P
 	}
 
 	step_size = this->kappa * rho0_to_rhomax / num_points;
-	vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 
 	reparametrize();
 }
@@ -154,12 +227,13 @@ StepFunction System::Zp() {
 
 RealVector System::full_vector_representation() {
 	std::vector<PhysicalDouble> params;
-	for (size_t i = 0; i < parameters.size(); i++) {
-		if (i != 2) {
-			params.insert(params.end(), parameters[i].begin(), parameters[i].end());
-		} else {
-			params.insert(params.end(), parameters[i].begin() + 1, parameters[i].end());
-		}
+	for (size_t i = 0; i < num_functions(); i++) {
+//		if (i != 2) {
+//			params.insert(params.end(), parameters[i].begin(), parameters[i].end());
+//		} else {
+//			params.insert(params.end(), parameters[i].begin() + 1, parameters[i].end());
+//		}
+		params.insert(params.end(), parameters[i].begin(), parameters[i].end());
 	}
 	return RealVector(params);
 }
@@ -176,6 +250,8 @@ void System::precalculate_rho_derivatives() {
 
 		rho_func = V().x_func();
 		d_inv = 1.l / d;
+
+		vd = std::pow(2., -1 - d) * std::pow(M_PI, -d / 2) / std::tgamma(d / 2);
 
 	}
 	rho_derivatives_calculated = true;
@@ -212,6 +288,7 @@ void System::push_time_derivative_integrals(size_t i) {
 
 			PhysicalDouble v_int = (-2 * ((2 + n) * v1 + f5 * y2)) / f0;
 			PhysicalDouble zs_int = (-2 * f5) / f0;
+//			zs_int = 0; //LPA test
 			return std::array<PhysicalDouble, 3> { pref * v_int, pref * zs_int, pref * zs_int };
 		};
 		integrator->push_integrand_function(integrands);
@@ -268,6 +345,8 @@ void System::push_time_derivative_integrals(size_t i) {
 				+ ((f116 * (f119 * f31 - f47)) / f118 + (8 * d * f135 + 16 * rpy2 * y2) / f134) / gs
 				+ ((f116 * f135 * (f117 - rpy + zp - 2 * zs)) / f134
 					- (2 * (4 * rpy2 * y2 + d * (5 * f117 + 2 * rpy + zp + 2 * f119 * zp2 + zs))) / (d * rho)) / f5;
+//			zs_int = 0; //LPA test
+//			zp_int = 0; //LPA test
 			return std::array<PhysicalDouble, 3> { pref * v_int, pref * zs_int, pref * zp_int };
 		};
 		integrator->push_integrand_function(integrands);
@@ -308,6 +387,7 @@ void System::find_eta() {
 	PhysicalDouble eta_component = z + rho * z1 + vd * i2;
 
 	eta = -free_component / eta_component;
+//	eta = 0; //LPA test
 }
 
 PhysicalDouble System::time_derivative(size_t func_i, size_t rho_i, size_t integrals_position) {
@@ -330,7 +410,7 @@ PhysicalDouble System::time_derivative(size_t func_i, size_t rho_i, size_t integ
 	return integral + scaling;
 }
 
-System System::time_derivative() {
+SystemDelta System::time_derivative() {
 	precalculate_rho_derivatives();
 	find_eta();
 
@@ -359,16 +439,10 @@ System System::time_derivative() {
 	StepFunction zp_der = -eta * Zp() - (d - 2 + eta) * rho_func * Zp1
 		- vd * StepFunction(step, zp_vals, V().domain_begin);
 
-	System derivative = *this;
-	derivative.parameters = std::vector<StepFunction>();
-	derivative.parameters.push_back(v_der);
-	derivative.parameters.push_back(zs_der);
-	derivative.parameters.push_back(zp_der);
-	derivative.eta = eta;
+	beta_function = SystemDelta( { v_der, zs_der, zp_der });
+	beta_squared = beta_function.vector_representation().norm();
 
-	this->beta_squared = derivative.full_vector_representation().norm();
-
-	return derivative;
+	return beta_function;
 }
 
 void System::rescale() {
@@ -545,21 +619,13 @@ std::string System::print_configuration() {
 	return configuration.str();
 }
 
-System& System::operator+=(System rhs) {
+System& System::operator+=(SystemDelta rhs) {
 	if (num_functions() != rhs.num_functions()) {
 		throw std::invalid_argument("System: Adding systems with different numbers of functions");
 	}
 
-	for (size_t i = 0; i < parameters.size(); i++) {
+	for (size_t i = 0; i < num_functions(); i++) {
 		parameters[i] = parameters[i] + rhs[i];
-	}
-	rho_derivatives_calculated = false;
-	return *this;
-}
-
-System& System::operator*=(PhysicalDouble rhs) {
-	for (size_t i = 0; i < parameters.size(); i++) {
-		parameters[i] = parameters[i] * rhs;
 	}
 	rho_derivatives_calculated = false;
 	return *this;
@@ -576,18 +642,6 @@ void System::cache_regulator() {
 void System::plot_parameters() {
 	TerminalPlot plot;
 	plot.plot(parameters);
-}
-
-System operator+(System lhs, System rhs) {
-	lhs += rhs;
-	lhs.rho_derivatives_calculated = false;
-	return lhs;
-}
-
-System operator*(PhysicalDouble lhs, System rhs) {
-	rhs *= lhs;
-	rhs.rho_derivatives_calculated = false;
-	return rhs;
 }
 
 std::ostream& operator<<(std::ostream &out, System s) {

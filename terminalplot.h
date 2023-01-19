@@ -19,9 +19,10 @@ public:
 
 	void plot(std::vector<StepFunction> functions);
 
+	PhysicalDouble max_val = 2, min_val = -2;
+	bool fixed_range = false;
 private:
 	int width = 80, height = 25;
-	PhysicalDouble max_val = 2, min_val = -2;
 	std::vector<char> markers { '1', '2', '3', '4' };
 };
 
